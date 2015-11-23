@@ -31,7 +31,8 @@ import java.util.PriorityQueue;
 import java8.util.Spliterator;
 import java8.util.function.Consumer;
 
-final class PriorityQueueSpliterator<E> implements Spliterator<E> {
+// Spliterator for java.util.PriorityQueue
+final class PQueueSpliterator<E> implements Spliterator<E> {
     /*
      * This is very similar to ArrayList Spliterator, except for
      * extra null checks.
@@ -42,7 +43,7 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
     private int expectedModCount; // initialized when fence set
 
     /** Creates new spliterator covering the given range */
-    private PriorityQueueSpliterator(PriorityQueue<E> pq, int origin, int fence,
+    private PQueueSpliterator(PriorityQueue<E> pq, int origin, int fence,
                          int expectedModCount) {
         this.pq = pq;
         this.index = origin;
@@ -51,7 +52,7 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
     }
 
     static <T> Spliterator<T> spliterator(PriorityQueue<T> pq) {
-        return new PriorityQueueSpliterator<T>(pq, 0, -1, 0);
+        return new PQueueSpliterator<T>(pq, 0, -1, 0);
     }
 
     private int getFence() { // initialize fence to size on first use
@@ -64,10 +65,10 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
     }
 
     @Override
-    public PriorityQueueSpliterator<E> trySplit() {
+    public PQueueSpliterator<E> trySplit() {
         int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
         return (lo >= mid) ? null :
-            new PriorityQueueSpliterator<E>(pq, lo, index = mid,
+            new PQueueSpliterator<E>(pq, lo, index = mid,
                                             expectedModCount);
     }
 
@@ -148,40 +149,38 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
     }
 
     private static <T> int getSize(PriorityQueue<T> pq) {
-        return UNSAFE.getInt(pq, SIZE_OFF);
+        return U.getInt(pq, SIZE_OFF);
     }
 
     private static <T> int getModCount(PriorityQueue<T> pq) {
         if (IS_ANDROID) {
             return 0;
         }
-        return UNSAFE.getInt(pq, MODCOUNT_OFF);
+        return U.getInt(pq, MODCOUNT_OFF);
     }
 
     private static <T> Object[] getQueue(PriorityQueue<T> pq) {
-        return (Object[]) UNSAFE.getObject(pq, QUEUE_OFF);
+        return (Object[]) U.getObject(pq, QUEUE_OFF);
     }
 
     // Unsafe mechanics
-    private static final sun.misc.Unsafe UNSAFE;
+    private static final boolean IS_ANDROID = Spliterators.IS_ANDROID;
+    private static final sun.misc.Unsafe U = UnsafeAccess.unsafe;
     private static final long SIZE_OFF;
     private static final long MODCOUNT_OFF;
     private static final long QUEUE_OFF;
-    private static final boolean IS_ANDROID;
     static {
         try {
-            IS_ANDROID = Spliterators.IS_ANDROID;
-            UNSAFE = UnsafeAccess.unsafe;
-            Class<?> pq = PriorityQueue.class;
-            SIZE_OFF = UNSAFE.objectFieldOffset(pq.getDeclaredField("size"));
+            SIZE_OFF = U.objectFieldOffset(PriorityQueue.class
+                    .getDeclaredField("size"));
             if (!IS_ANDROID) {
-                MODCOUNT_OFF = UNSAFE.objectFieldOffset(pq
+                MODCOUNT_OFF = U.objectFieldOffset(PriorityQueue.class
                         .getDeclaredField("modCount"));
             } else {
                 MODCOUNT_OFF = 0L; // unused
             }
             String queueFieldName = IS_ANDROID ? "elements" : "queue";
-            QUEUE_OFF = UNSAFE.objectFieldOffset(pq
+            QUEUE_OFF = U.objectFieldOffset(PriorityQueue.class
                     .getDeclaredField(queueFieldName));
         } catch (Exception e) {
             throw new Error(e);
