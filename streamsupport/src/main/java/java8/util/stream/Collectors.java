@@ -41,7 +41,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import java8.lang.Longs;
 import java8.util.Maps;
 import java8.util.Objects;
 import java8.util.DoubleSummaryStatistics;
@@ -547,7 +546,7 @@ public final class Collectors {
      * stream returned by mapper
      * @return a collector which applies the mapping function to the input
      * elements and provides the flat mapped results to the downstream collector
-     * @since 1.9
+     * @since 9
      */
     public static <T, U, A, R>
     Collector<T, ?, R> flatMapping(Function<? super T, ? extends Stream<? extends U>> mapper,
@@ -627,7 +626,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, Long>
     counting() {
-        return reducing(0L, e -> 1L, Longs::sum);
+    	return summingLong(e -> 1L);
     }
 
     /**
