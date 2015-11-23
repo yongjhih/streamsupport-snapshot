@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# http://sourceforge.net/projects/streamsupport/files/1.4-stable/streamsupport-1.4-src.zip/download
+
+version="1.4"
+
+versions=(
+1.4
+1.3.2
+1.3.1
+1.3
+1.2.2
+1.2.1
+1.2
+1.1.5
+1.1.4
+1.1.3
+1.1.2
+)
+
+for version in "${versions[@]}"; do
+    wget "http://sourceforge.net/projects/streamsupport/files/${version}-stable/streamsupport-${version}-src.zip/download" -O "${version}.zip"
+    unzip "${version}.zip"
+done
