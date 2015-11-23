@@ -1,9 +1,33 @@
-RELEASE NOTES
+streamsupport is a backport of the Java 8 java.util.function (functional interfaces) and java.util.stream (streams) API for users of Java 6 or 7 supplemented with selected additions from java.util.concurrent which didn't exist back in Java 6.
+
+Due to the lack of default interface methods and static interface methods in pre-Java 8 the API had to be slightly adjusted in these areas but still covers the full functionality scope of Java 8. In detail, static and default interface methods have been moved to companion classes in the same package that bear the identical name as the interface but with an "s" appended (e.g. Comparator -> Comparators).
+
+For ease of use, the default methods for most of the functional interfaces were NOT retained as abstract methods in the redefined interfaces (keeping them single method interfaces) - the missing default (and static) methods can always be found in the corresponding companion class.
+
+Want also lambdas? https://github.com/orfjackal/retrolambda
+
+[streamsupport Web Site](http://streamsupport.sourceforge.net/)
+
+## Categories
+
+[Libraries](http://sourceforge.net/directory/development/softdevlibraries/)
+
+## Features
+
+* Java 8 Streams library backport
+* Java 8 CompletableFuture backport
+* Java 8 Parallel array operations backport
+* Java 8 Functional interfaces backport
+* Further java.util.concurrent enhancements from Java 7/8 backported to Java 6
+* Includes miscellaneous Java 8 goodies (Optional, StringJoiner, ...)
+* Supports Android
+
+## RELEASE NOTES
 
  - "1.4-stable" is the current stable release
 
 
-GENERAL
+## GENERAL
 
  - To create a Stream from a java.util Collection use the static j8.u.s.StreamSupport
    methods j8.u.s.StreamSupport#stream(Collection), or (for a parallel Stream)
@@ -61,7 +85,7 @@ GENERAL
 
 
 
-VERSION HISTORY
+## VERSION HISTORY
 
 1.4-stable (2015-11-15)
  - JDK-8134852: Java 9 fork/join with API enhancements (JEP 266)
