@@ -535,7 +535,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
-     * @since 1.9
+     * @since 9
      */
     Stream<T> takeWhile(Predicate<? super T> predicate);
 
@@ -594,7 +594,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
-     * @since 1.9
+     * @since 9
      */
     Stream<T> dropWhile(Predicate<? super T> predicate);
 
@@ -1109,7 +1109,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * builder, in the order they were added.
      *
      * @param <T> the type of stream elements
-     * @see StreamSupport#builder()
+     * @see RefStreams#builder()
      * @since 1.8
      */
     public interface Builder<T> extends Consumer<T> {
