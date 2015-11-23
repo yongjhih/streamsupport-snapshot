@@ -24,6 +24,8 @@
  */
 package java8.util;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +43,8 @@ import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import java8.util.function.Consumer;
@@ -58,6 +62,14 @@ import java8.util.function.LongConsumer;
  * @since 1.8
  */
 public final class Spliterators {
+
+	private static final String NATIVE_OPT_ENABLED_PROP = Spliterators.class.getName() + ".assume.oracle.collections.impl";
+	private static final String JRE8_DELEGATION_ENABLED_PROP = Spliterators.class.getName() + ".jre8.delegation.enabled";
+
+	// defaults to true
+	static final boolean NATIVE_SPECIALIZATION = getBooleanPropertyValue(NATIVE_OPT_ENABLED_PROP);
+	// defaults to true
+	static final boolean JRE8_DELEGATION = getBooleanPropertyValue(JRE8_DELEGATION_ENABLED_PROP);
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Spliterators() {}
@@ -829,6 +841,8 @@ public final class Spliterators {
 	 * <li>java.util.LinkedHashSet</li>
 	 * <li>java.util.PriorityQueue</li>
 	 * <li>java.util.concurrent.ArrayBlockingQueue</li>
+	 * <li>java.util.concurrent.LinkedBlockingQueue</li>
+	 * <li>java.util.concurrent.LinkedBlockingDeque</li>
 	 * <li>java.util.concurrent.PriorityBlockingQueue</li>
 	 * <li>java.util.concurrent.CopyOnWriteArrayList</li>
 	 * <li>java.util.concurrent.CopyOnWriteArraySet</li>
@@ -869,20 +883,20 @@ public final class Spliterators {
     }
 
     private static <T> Spliterator<T> listSpliterator(List<? extends T> c) {
-		if (c instanceof ArrayList) {
+		if (NATIVE_SPECIALIZATION && c instanceof ArrayList) {
 			return ArrayListSpliterator.spliterator((ArrayList<T>) c);
 		}
 
 		String className = c.getClass().getName();
-		if ("java.util.Arrays$ArrayList".equals(className)) {
+		if (NATIVE_SPECIALIZATION && "java.util.Arrays$ArrayList".equals(className)) {
 			return ArraysArrayListSpliterator.spliterator((List<T>) c);
 		}
 
-		if (c instanceof CopyOnWriteArrayList) {
+		if (NATIVE_SPECIALIZATION && c instanceof CopyOnWriteArrayList) {
 			return CopyOnWriteArrayListSpliterator
 					.spliterator((CopyOnWriteArrayList<T>) c);
 		}
-		if (c instanceof Vector) {
+		if (NATIVE_SPECIALIZATION && c instanceof Vector) {
 			return VectorSpliterator.spliterator((Vector<T>) c);
 		}
 
@@ -905,7 +919,7 @@ public final class Spliterators {
 			};
 		}
 
-		if (c instanceof CopyOnWriteArraySet) {
+		if (NATIVE_SPECIALIZATION && c instanceof CopyOnWriteArraySet) {
 			return CopyOnWriteArraySetSpliterator
 					.spliterator((CopyOnWriteArraySet<T>) c);
 		}
@@ -919,13 +933,19 @@ public final class Spliterators {
 			return spliterator(c, Spliterator.ORDERED | Spliterator.NONNULL
 					| Spliterator.CONCURRENT);
 		}
-		if (c instanceof ArrayDeque) {
+		if (NATIVE_SPECIALIZATION && c instanceof LinkedBlockingQueue) {
+			return LBQSpliterator.spliterator((LinkedBlockingQueue<T>) c);
+		}
+		if (NATIVE_SPECIALIZATION && c instanceof ArrayDeque) {
 			return ArrayDequeSpliterator.spliterator((ArrayDeque<T>) c);
 		}
-		if (c instanceof PriorityBlockingQueue) {
+		if (NATIVE_SPECIALIZATION && c instanceof LinkedBlockingDeque) {
+			return LBDSpliterator.spliterator((LinkedBlockingDeque<T>) c);
+		}
+		if (NATIVE_SPECIALIZATION && c instanceof PriorityBlockingQueue) {
 			return PriorityBlockingQueueSpliterator.spliterator((PriorityBlockingQueue<T>) c);
 		}
-		if (c instanceof PriorityQueue) {
+		if (NATIVE_SPECIALIZATION && c instanceof PriorityQueue) {
 			return PriorityQueueSpliterator.spliterator((PriorityQueue<T>) c);
 		}
 
@@ -2942,5 +2962,21 @@ public final class Spliterators {
             }
             throw new IllegalStateException();
         }
+    }
+
+    private static boolean getBooleanPropertyValue(final String property) {
+    	return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+			@Override
+			public Boolean run() {
+		        boolean value = true;
+		        try {
+		        	String s = System.getProperty(property, Boolean.TRUE.toString());
+		            value = (s == null) || s.trim().equalsIgnoreCase(Boolean.TRUE.toString());
+		        } catch (IllegalArgumentException ignore) {
+		        } catch (NullPointerException ignore) {
+		        }
+		        return value;
+			}
+		});
     }
 }
