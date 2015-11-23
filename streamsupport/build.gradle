@@ -44,7 +44,7 @@ publish {
     groupId = 'com.infstory'
     artifactId = 'streamsupport'
     //uploadName = ''
-    publishVersion = '1.2.2'
+    publishVersion = '1.3'
     desc = 'Backport of Java 8 java.util.stream API to Java 6/7 and Android'
     website = 'https://github.com/yongjhih/streamsupport'
     bintrayUser = getRepositoryUsername()
