@@ -109,7 +109,7 @@ public final class RefStreams {
      * @return the new stream
      * @since 1.9
      */
-    public static<T> Stream<T> takeWhile(Stream<? extends T> stream, Predicate<? super T> predicate) {
+    public static <T> Stream<T> takeWhile(Stream<? extends T> stream, Predicate<? super T> predicate) {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(predicate);
 
@@ -184,7 +184,7 @@ public final class RefStreams {
      * @return the new stream
      * @since 1.9
      */
-    public static<T> Stream<T> dropWhile(Stream<? extends T> stream, Predicate<? super T> predicate) {
+    public static <T> Stream<T> dropWhile(Stream<? extends T> stream, Predicate<? super T> predicate) {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(predicate);
 
@@ -204,7 +204,7 @@ public final class RefStreams {
      * @param <T> type of elements
      * @return a stream builder
      */
-    public static<T> Builder<T> builder() {
+    public static <T> Builder<T> builder() {
         return StreamSupport.builder();
     }
 
@@ -214,7 +214,7 @@ public final class RefStreams {
      * @param <T> the type of stream elements
      * @return an empty sequential stream
      */
-    public static<T> Stream<T> empty() {
+    public static <T> Stream<T> empty() {
         return StreamSupport.empty();
     }
 
@@ -225,7 +225,7 @@ public final class RefStreams {
      * @param <T> the type of stream elements
      * @return a singleton sequential stream
      */
-    public static<T> Stream<T> of(T t) {
+    public static <T> Stream<T> of(T t) {
         return StreamSupport.of(t);
     }
 
@@ -239,7 +239,7 @@ public final class RefStreams {
      *         is non-null, otherwise an empty stream
      * @since 1.9
      */
-    public static<T> Stream<T> ofNullable(T t) {
+    public static <T> Stream<T> ofNullable(T t) {
         return StreamSupport.ofNullable(t);
     }
 
@@ -251,7 +251,7 @@ public final class RefStreams {
      * @param values the elements of the new stream
      * @return the new stream
      */
-    public static<T> Stream<T> of(@SuppressWarnings("unchecked") T... values) {
+    public static <T> Stream<T> of(@SuppressWarnings("unchecked") T... values) {
         return StreamSupport.of(values);
     }
 
@@ -266,13 +266,14 @@ public final class RefStreams {
      * {@code n}, will be the result of applying the function {@code f} to the
      * element at position {@code n - 1}.
      *
+     * @param <S> the type of the operand and seed, a subtype of T
      * @param <T> the type of stream elements
      * @param seed the initial element
      * @param f a function to be applied to the previous element to produce
      *          a new element
      * @return a new sequential {@code Stream}
      */
-    public static<T> Stream<T> iterate(T seed, UnaryOperator<T> f) {
+    public static <T, S extends T> Stream<T> iterate(S seed, UnaryOperator<S> f) {
         return StreamSupport.iterate(seed, f);
     }
 
@@ -286,7 +287,7 @@ public final class RefStreams {
      * @param s the {@code Supplier} of generated elements
      * @return a new infinite sequential unordered {@code Stream}
      */
-    public static<T> Stream<T> generate(Supplier<T> s) {
+    public static <T> Stream<T> generate(Supplier<? extends T> s) {
         return StreamSupport.generate(s);
     }
 
@@ -302,6 +303,8 @@ public final class RefStreams {
      * Use caution when constructing streams from repeated concatenation.
      * Accessing an element of a deeply concatenated stream can result in deep
      * call chains, or even {@code StackOverflowError}.
+     * <p>Subsequent changes to the sequential/parallel execution mode of the
+     * returned stream are not guaranteed to be propagated to the input streams.
      *
      * @param <T> The type of stream elements
      * @param a the first stream
@@ -310,28 +313,6 @@ public final class RefStreams {
      */
     public static <T> Stream<T> concat(Stream<? extends T> a, Stream<? extends T> b) {
         return StreamSupport.concat(a, b);
-    }
-
-    /**
-     * Adds an element to the {@link Stream} being built represented by the
-     * {@link Stream.Builder} argument.
-     *
-     * <p><b>Implementation Requirements:</b><br>
-     * The default implementation behaves as if:
-     * <pre>{@code
-     *     builder.accept(t)
-     *     return builder;
-     * }</pre>
-     *
-     * @param <T> the type of stream elements
-     * @param builder the {@link Stream.Builder} to use
-     * @param t the element to add
-     * @return the passed builder
-     * @throws IllegalStateException if the builder has already transitioned to
-     * the built state
-     */
-    public static <T> Stream.Builder<T> add(Stream.Builder<T> builder, T t) {
-        return StreamSupport.add(builder, t);
     }
 
     private RefStreams() {

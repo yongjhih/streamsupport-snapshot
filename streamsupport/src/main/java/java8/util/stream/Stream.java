@@ -244,7 +244,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * stream of the {@code words} contained in that file:
      * <pre>{@code
      *     Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8);
-     *     Stream<String> words = lines.flatMap(line -> Stream.of(line.split(" +")));
+     *     Stream<String> words = lines.flatMap(line -> RefStreams.of(line.split(" +")));
      * }</pre>
      * The {@code mapper} function passed to {@code flatMap} splits a line,
      * using a simple regular expression, into an array of words, and then
@@ -335,7 +335,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * Preserving stability for {@code distinct()} in parallel pipelines is
      * relatively expensive (requires that the operation act as a full barrier,
      * with substantial buffering overhead), and stability is often not needed.
-     * Using an unordered stream source (such as {@link StreamSupport#generate(Supplier)})
+     * Using an unordered stream source (such as {@link RefStreams#generate(Supplier)})
      * or removing the ordering constraint with {@link #unordered()} may result
      * in significantly more efficient execution for {@code distinct()} in parallel
      * pipelines, if the semantics of your situation permit.  If consistency
@@ -397,7 +397,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <p><b>API Note:</b><br> This method exists mainly to support debugging, where you want
      * to see the elements as they flow past a certain point in a pipeline:
      * <pre>{@code
-     *     Stream.of("one", "two", "three", "four")
+     *     RefStreams.of("one", "two", "three", "four")
      *         .filter(e -> e.length() > 3)
      *         .peek(e -> System.out.println("Filtered value: " + e))
      *         .map(String::toUpperCase)
@@ -425,7 +425,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * especially for large values of {@code maxSize}, since {@code limit(n)}
      * is constrained to return not just any <em>n</em> elements, but the
      * <em>first n</em> elements in the encounter order.  Using an unordered
-     * stream source (such as {@link StreamSupport#generate(Supplier)}) or removing the
+     * stream source (such as {@link RefStreams#generate(Supplier)}) or removing the
      * ordering constraint with {@link #unordered()} may result in significant
      * speedups of {@code limit()} in parallel pipelines, if the semantics of
      * your situation permit.  If consistency with encounter order is required,
@@ -454,7 +454,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * especially for large values of {@code n}, since {@code skip(n)}
      * is constrained to skip not just any <em>n</em> elements, but the
      * <em>first n</em> elements in the encounter order.  Using an unordered
-     * stream source (such as {@link StreamSupport#generate(Supplier)}) or removing the
+     * stream source (such as {@link RefStreams#generate(Supplier)}) or removing the
      * ordering constraint with {@link #unordered()} may result in significant
      * speedups of {@code skip()} in parallel pipelines, if the semantics of
      * your situation permit.  If consistency with encounter order is required,
@@ -961,12 +961,13 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
 
     /**
      * Returns the count of elements in this stream.  This is a special case of
-     * a <a href="package-summary.html#Reduction">reduction</a> and is
-     * equivalent to:
+     * a <a href="package-summary.html#Reduction">reduction</a> and is (at least
+     * in the predominant case where the count can't be directly obtained from
+     * the stream source) equivalent to:
      * <pre>{@code
      *     return mapToLong(e -> 1L).sum();
      * }</pre>
-     *
+     * 
      * <p>This is a <a href="package-summary.html#StreamOps">terminal operation</a>.
      *
      * <p><b>API Note:</b><br>
@@ -1093,133 +1094,6 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      */
     Optional<T> findAny();
 
-    // Static factories
-
-    /**
-     * Returns a builder for a {@code Stream}.
-     *
-     * @param <T> type of elements
-     * @return a stream builder
-     */
-//    public static<T> Builder<T> builder() {
-//        return new Streams.StreamBuilderImpl<>();
-//    }
-
-    /**
-     * Returns an empty sequential {@code Stream}.
-     *
-     * @param <T> the type of stream elements
-     * @return an empty sequential stream
-     */
-//    public static<T> Stream<T> empty() {
-//        return StreamSupport.stream(Spliterators.<T>emptySpliterator(), false);
-//    }
-
-    /**
-     * Returns a sequential {@code Stream} containing a single element.
-     *
-     * @param t the single element
-     * @param <T> the type of stream elements
-     * @return a singleton sequential stream
-     */
-//    public static<T> Stream<T> of(T t) {
-//        return StreamSupport.stream(new Streams.StreamBuilderImpl<>(t), false);
-//    }
-
-    /**
-     * Returns a sequential ordered stream whose elements are the specified values.
-     *
-     * @param <T> the type of stream elements
-     * @param values the elements of the new stream
-     * @return the new stream
-     */
-//    @SafeVarargs
-//    @SuppressWarnings("varargs") // Creating a stream from an array is safe
-//    public static<T> Stream<T> of(T... values) {
-//        return lambdas.util.Arrays.stream(values);
-//    }
-
-    /**
-     * Returns an infinite sequential ordered {@code Stream} produced by iterative
-     * application of a function {@code f} to an initial element {@code seed},
-     * producing a {@code Stream} consisting of {@code seed}, {@code f(seed)},
-     * {@code f(f(seed))}, etc.
-     *
-     * <p>The first element (position {@code 0}) in the {@code Stream} will be
-     * the provided {@code seed}.  For {@code n > 0}, the element at position
-     * {@code n}, will be the result of applying the function {@code f} to the
-     * element at position {@code n - 1}.
-     *
-     * @param <T> the type of stream elements
-     * @param seed the initial element
-     * @param f a function to be applied to the previous element to produce
-     *          a new element
-     * @return a new sequential {@code Stream}
-     */
-//    public static<T> Stream<T> iterate(final T seed, final UnaryOperator<T> f) {
-//        Objects.requireNonNull(f);
-//        final Iterator<T> iterator = new Iterator<T>() {
-//            @SuppressWarnings("unchecked")
-//            T t = (T) Streams.NONE;
-//
-//            @Override
-//            public boolean hasNext() {
-//                return true;
-//            }
-//
-//            @Override
-//            public T next() {
-//                return t = (t == Streams.NONE) ? seed : f.apply(t);
-//            }
-//        };
-//        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
-//                iterator,
-//                Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
-//    }
-
-    /**
-     * Returns an infinite sequential unordered stream where each element is
-     * generated by the provided {@code Supplier}.  This is suitable for
-     * generating constant streams, streams of random elements, etc.
-     *
-     * @param <T> the type of stream elements
-     * @param s the {@code Supplier} of generated elements
-     * @return a new infinite sequential unordered {@code Stream}
-     */
-//    public static<T> Stream<T> generate(Supplier<T> s) {
-//        Objects.requireNonNull(s);
-//        return StreamSupport.stream(
-//                new StreamSpliterators.InfiniteSupplyingSpliterator.OfRef<>(Long.MAX_VALUE, s), false);
-//    }
-
-    /**
-     * Creates a lazily concatenated stream whose elements are all the
-     * elements of the first stream followed by all the elements of the
-     * second stream.  The resulting stream is ordered if both
-     * of the input streams are ordered, and parallel if either of the input
-     * streams is parallel.  When the resulting stream is closed, the close
-     * handlers for both input streams are invoked.
-     *
-     * <p><b>Implementation Note:</b><br>
-     * Use caution when constructing streams from repeated concatenation.
-     * Accessing an element of a deeply concatenated stream can result in deep
-     * call chains, or even {@code StackOverflowError}.
-     *
-     * @param <T> The type of stream elements
-     * @param a the first stream
-     * @param b the second stream
-     * @return the concatenation of the two input streams
-     */
-//    public static <T> Stream<T> concat(Stream<? extends T> a, Stream<? extends T> b) {
-//        Objects.requireNonNull(a);
-//        Objects.requireNonNull(b);
-//
-//        @SuppressWarnings("unchecked")
-//        Spliterator<T> split = new Streams.ConcatSpliterator.OfRef<>(
-//                (Spliterator<T>) a.spliterator(), (Spliterator<T>) b.spliterator());
-//        Stream<T> stream = StreamSupport.stream(split, a.isParallel() || b.isParallel());
-//        return stream.onClose(Streams.composedClose(a, b));
-//    }
 
     /**
      * A mutable builder for a {@code Stream}.  This allows the creation of a
@@ -1265,10 +1139,6 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
          * the built state
          */
         Builder<T> add(T t);
-//        default Builder<T> add(T t) {
-//            accept(t);
-//            return this;
-//        }
 
         /**
          * Builds the stream, transitioning this builder to the built state.

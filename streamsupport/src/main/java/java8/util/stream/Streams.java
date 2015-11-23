@@ -32,6 +32,7 @@ import java8.util.function.Consumer;
 import java8.util.function.DoubleConsumer;
 import java8.util.function.IntConsumer;
 import java8.util.function.LongConsumer;
+import java8.util.stream.IntStream.Builder;
 import java8.util.Spliterator;
 
 /**
@@ -61,7 +62,7 @@ final class Streams {
      * An {@code int} range spliterator.
      */
     static final class RangeIntSpliterator implements Spliterator.OfInt {
-        // Can never be greater that upTo, this avoids overflow if upper bound
+        // Can never be greater than upTo, this avoids overflow if upper bound
         // is Integer.MAX_VALUE
         // All elements are traversed if from == upTo & last == 0
         private int from;
@@ -176,10 +177,10 @@ final class Streams {
          * than a balanced tree at the expense of a higher-depth for the right
          * side of the range.
          *
-         * <p>This is optimized for cases such as IntStream.ints() that is
-         * implemented as range of 0 to Integer.MAX_VALUE but is likely to be
-         * augmented with a limit operation that limits the number of elements
-         * to a count lower than this threshold.
+         * <p>This is optimized for cases such as IntStream.range(0, Integer.MAX_VALUE)
+         * that is implemented as range of 0 to Integer.MAX_VALUE but is likely
+         * to be augmented with a limit operation that limits the number of
+         * elements to a count lower than this threshold.
          */
         private static final int BALANCED_SPLIT_THRESHOLD = 1 << 24;
 
@@ -220,7 +221,6 @@ final class Streams {
         }
 
         private RangeLongSpliterator(long from, long upTo, int last) {
-//            assert upTo - from + last > 0;
             this.from = from;
             this.upTo = upTo;
             this.last = last;
@@ -320,10 +320,10 @@ final class Streams {
          * than a balanced tree at the expense of a higher-depth for the right
          * side of the range.
          *
-         * <p>This is optimized for cases such as LongStream.longs() that is
-         * implemented as range of 0 to Long.MAX_VALUE but is likely to be
-         * augmented with a limit operation that limits the number of elements
-         * to a count lower than this threshold.
+         * <p>This is optimized for cases such as LongStream.range(0, Long.MAX_VALUE)
+         * that is implemented as range of 0 to Long.MAX_VALUE but is likely
+         * to be augmented with a limit operation that limits the number of
+         * elements to a count lower than this threshold.
          */
         private static final long BALANCED_SPLIT_THRESHOLD = 1 << 24;
 
@@ -431,6 +431,7 @@ final class Streams {
             }
         }
 
+        @Override
         public Stream.Builder<T> add(T t) {
             accept(t);
             return this;
@@ -525,6 +526,12 @@ final class Streams {
             else {
                 throw new IllegalStateException();
             }
+        }
+
+        @Override
+        public Builder add(int t) {
+            accept(t);
+            return this;
         }
 
         @Override
@@ -629,6 +636,12 @@ final class Streams {
         }
 
         @Override
+        public java8.util.stream.LongStream.Builder add(long t) {
+            accept(t);
+            return this;
+        }
+
+        @Override
         public LongStream build() {
             int c = count;
             if (c >= 0) {
@@ -727,6 +740,12 @@ final class Streams {
             else {
                 throw new IllegalStateException();
             }
+        }
+
+        @Override
+        public java8.util.stream.DoubleStream.Builder add(double t) {
+            accept(t);
+            return this;
         }
 
         @Override

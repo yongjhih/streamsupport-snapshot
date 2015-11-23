@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 - 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,11 +387,9 @@ final class SortedOps {
 
         @Override
         public void end() {
-//        	list.sort(comparator);
             Lists.sort(list, comparator);
             downstream.begin(list.size());
             if (!cancellationWasRequested) {
-//                list.forEach(downstream::accept);
                 Iterables.forEach(list, downstream::accept);
             } else {
                 for (T t : list) {
