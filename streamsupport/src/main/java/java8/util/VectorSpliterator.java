@@ -42,7 +42,7 @@ final class VectorSpliterator<E> implements Spliterator<E> {
     private int expectedModCount; // initialized when fence set
 
     /** Create new spliterator covering the given range */
-    VectorSpliterator(Vector<E> list, Object[] array, int origin, int fence,
+    private VectorSpliterator(Vector<E> list, Object[] array, int origin, int fence,
                       int expectedModCount) {
         this.list = list;
         this.array = array;
@@ -78,10 +78,8 @@ final class VectorSpliterator<E> implements Spliterator<E> {
 	@Override
     @SuppressWarnings("unchecked")
     public boolean tryAdvance(Consumer<? super E> action) {
+        Objects.requireNonNull(action);
         int i;
-        if (action == null) {
-            throw new NullPointerException();
-        }
         if (getFence() > (i = index)) {
             index = i + 1;
             action.accept((E) array[i]);
@@ -96,11 +94,10 @@ final class VectorSpliterator<E> implements Spliterator<E> {
 	@Override
     @SuppressWarnings("unchecked")
     public void forEachRemaining(Consumer<? super E> action) {
+		Objects.requireNonNull(action);
         int i, hi; // hoist accesses and checks from loop
-        Vector<E> lst; Object[] a;
-        if (action == null) {
-            throw new NullPointerException();
-        }
+        Vector<E> lst;
+        Object[] a;
         if ((lst = list) != null) {
             if ((hi = fence) < 0) {
                 synchronized (lst) {

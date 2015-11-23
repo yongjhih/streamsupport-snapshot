@@ -76,7 +76,7 @@ final class ArrayListSpliterator<E> implements Spliterator<E> {
     private int expectedModCount; // initialized when fence set
 
     /** Create new spliterator covering the given range */
-    ArrayListSpliterator(ArrayList<E> list, int origin, int fence,
+    private ArrayListSpliterator(ArrayList<E> list, int origin, int fence,
                          int expectedModCount) {
         this.list = list; // OK if null unless traversed
 //        this.elementData = (this.list != null) ? getData(this.list) : null;
@@ -113,9 +113,7 @@ final class ArrayListSpliterator<E> implements Spliterator<E> {
 
     @Override
     public boolean tryAdvance(Consumer<? super E> action) {
-        if (action == null) {
-            throw new NullPointerException();
-        }
+    	Objects.requireNonNull(action);
         int hi = getFence(), i = index;
         if (i < hi) {
             index = i + 1;
@@ -132,10 +130,10 @@ final class ArrayListSpliterator<E> implements Spliterator<E> {
 
     @Override
     public void forEachRemaining(Consumer<? super E> action) {
+    	Objects.requireNonNull(action);
         int i, hi, mc; // hoist accesses and checks from loop
-        ArrayList<E> lst; Object[] a;
-        if (action == null)
-            throw new NullPointerException();
+        ArrayList<E> lst;
+        Object[] a;
         if ((lst = list) != null && (a = getData(lst)) != null) {
             if ((hi = fence) < 0) {
                 mc = getModCount(lst);
@@ -206,8 +204,10 @@ final class ArrayListSpliterator<E> implements Spliterator<E> {
 					.getDeclaredField("modCount"));
 			Class<?> al = ArrayList.class;
 			SIZE_OFF = UNSAFE.objectFieldOffset(al.getDeclaredField("size"));
+			String arrayFieldName = Spliterators.IS_ANDROID ? "array"
+					: "elementData";
 			DATA_OFF = UNSAFE.objectFieldOffset(al
-					.getDeclaredField("elementData"));
+					.getDeclaredField(arrayFieldName));
 		} catch (Exception e) {
 			throw new Error(e);
 		}
