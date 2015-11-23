@@ -103,7 +103,7 @@ public final class StreamSupport {
      *
      * @param <T> the type of stream elements
      * @param seed the initial element
-     * @param f a function to be applied to to the previous element to produce
+     * @param f a function to be applied to the previous element to produce
      *          a new element
      * @return a new sequential {@code Stream}
      */
@@ -159,7 +159,7 @@ public final class StreamSupport {
      * <p><b>Implementation Note:</b><br>
      * Use caution when constructing streams from repeated concatenation.
      * Accessing an element of a deeply concatenated stream can result in deep
-     * call chains, or even {@code StackOverflowException}.
+     * call chains, or even {@code StackOverflowError}.
      *
      * @param <T> The type of stream elements
      * @param a the first stream
@@ -215,6 +215,7 @@ public final class StreamSupport {
 	 * <li>java.util.ArrayDeque</li>
 	 * <li>java.util.Vector</li>
 	 * <li>java.util.LinkedList</li>
+	 * <li>java.util.HashSet</li>
 	 * <li>java.util.LinkedHashSet</li>
 	 * <li>java.util.PriorityQueue</li>
 	 * <li>java.util.concurrent.ArrayBlockingQueue</li>
@@ -223,6 +224,8 @@ public final class StreamSupport {
 	 * <li>java.util.concurrent.PriorityBlockingQueue</li>
 	 * <li>java.util.concurrent.CopyOnWriteArrayList</li>
 	 * <li>java.util.concurrent.CopyOnWriteArraySet</li>
+	 * <li>The collections returned from the java.util.HashMap methods
+	 * #keySet(), #entrySet() and #values()</li>
 	 * </ul>
 	 *
 	 * <p>
@@ -266,6 +269,7 @@ public final class StreamSupport {
 	 * <li>java.util.ArrayDeque</li>
 	 * <li>java.util.Vector</li>
 	 * <li>java.util.LinkedList</li>
+	 * <li>java.util.HashSet</li>
 	 * <li>java.util.LinkedHashSet</li>
 	 * <li>java.util.PriorityQueue</li>
 	 * <li>java.util.concurrent.ArrayBlockingQueue</li>
@@ -274,6 +278,8 @@ public final class StreamSupport {
 	 * <li>java.util.concurrent.PriorityBlockingQueue</li>
 	 * <li>java.util.concurrent.CopyOnWriteArrayList</li>
 	 * <li>java.util.concurrent.CopyOnWriteArraySet</li>
+	 * <li>The collections returned from the java.util.HashMap methods
+	 * #keySet(), #entrySet() and #values()</li>
 	 * </ul>
 	 *
 	 * <p>

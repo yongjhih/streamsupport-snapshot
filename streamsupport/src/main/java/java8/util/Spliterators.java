@@ -24,6 +24,7 @@
  */
 package java8.util;
 
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
@@ -31,10 +32,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -64,17 +67,19 @@ import java8.util.function.LongConsumer;
  */
 public final class Spliterators {
 
-	private static final String NATIVE_OPT_ENABLED_PROP = Spliterators.class.getName() + ".assume.oracle.collections.impl";
-	private static final String JRE8_DELEGATION_ENABLED_PROP = Spliterators.class.getName() + ".jre8.delegation.enabled";
+    private static final String NATIVE_OPT_ENABLED_PROP = Spliterators.class.getName() + ".assume.oracle.collections.impl";
+    private static final String JRE_DELEGATION_ENABLED_PROP = Spliterators.class.getName() + ".jre.delegation.enabled";
 
-	// defaults to true
-	static final boolean NATIVE_SPECIALIZATION = getBooleanPropertyValue(NATIVE_OPT_ENABLED_PROP);
-	// defaults to true
-	static final boolean JRE8_DELEGATION = getBooleanPropertyValue(JRE8_DELEGATION_ENABLED_PROP);
-	// defaults to false
-	static final boolean IS_ANDROID = isAndroid();
-	// defaults to false
-	static final boolean IS_JAVA6 = isJava6();
+    // defaults to true
+    static final boolean NATIVE_SPECIALIZATION = getBooleanPropertyValue(NATIVE_OPT_ENABLED_PROP);
+    // defaults to true
+    static final boolean JRE_DELEGATION_ENABLED = getBooleanPropertyValue(JRE_DELEGATION_ENABLED_PROP);
+    // defaults to false
+    static final boolean IS_ANDROID = isAndroid();
+    // defaults to false (Caution: Android is also Java6)
+    static final boolean IS_JAVA6 = isJava6();
+    // defaults to false
+    static final boolean JRE_HAS_STREAMS = isStreamEnabledJRE();
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Spliterators() {}
@@ -89,7 +94,7 @@ public final class Spliterators {
      * <p><b>Implementation Requirements:</b><br>
      * The default implementation repeatedly invokes {@link Spliterator#tryAdvance} until
      * it returns {@code false}.  It should be overridden whenever possible.
-     * 
+     *
      * @param <T> the type of elements returned by the passed Spliterator
      * @param this_ the Spliterator whose remaining elements should be processed
      * @param action The action
@@ -123,7 +128,7 @@ public final class Spliterators {
      * The default implementation returns true if the corresponding bits
      * of the given characteristics are set.
      *
-     * 
+     *
      * @param <T> the type of elements returned by the passed Spliterator
      * @param this_ the Spliterator whose characteristics should be queried
      * @param characteristics the characteristics to check for
@@ -151,12 +156,12 @@ public final class Spliterators {
      *         a characteristic of {@code SORTED}.
      */
     public static <T> Comparator<? super T> getComparator(Spliterator<T> this_) {
-    	//return this_.getComparator();
+        //return this_.getComparator();
         throw new IllegalStateException();
     }
 
     /**
-     * Static default implementations for the Java 8 default method of {@link Spliterator.OfPrimitive} 
+     * Static default implementations for the Java 8 default method of {@link Spliterator.OfPrimitive}
      */
     public static final class OfPrimitive {
         /**
@@ -188,13 +193,13 @@ public final class Spliterators {
             do { } while (this_.tryAdvance(action));
         }
 
-    	private OfPrimitive() {
-    		throw new AssertionError();
-    	}
+        private OfPrimitive() {
+            throw new AssertionError();
+        }
     }
 
     /**
-     * Static default implementations for the Java 8 default methods of {@link Spliterator.OfInt} 
+     * Static default implementations for the Java 8 default methods of {@link Spliterator.OfInt}
      */
     public static final class OfInt {
         /**
@@ -208,7 +213,7 @@ public final class Spliterators {
          * The default implementation repeatedly invokes {@link #tryAdvance}
          * until it returns {@code false}.  It should be overridden whenever
          * possible.
-         * 
+         *
          * @param this_ the Spliterator whose remaining elements should be processed
          * @param action The action to execute
          * @throws NullPointerException if the specified {@code this_} Spliterator is null
@@ -219,12 +224,12 @@ public final class Spliterators {
         }
 
         /**
-	     * If a remaining element exists, performs the given action on it,
-	     * returning {@code true}; else returns {@code false}.  If the {@code this_}
-	     * Spliterator is {@link Spliterator#ORDERED} the action is performed on the
-	     * next element in encounter order.  Exceptions thrown by the
-	     * action are relayed to the caller.
-	     * 
+         * If a remaining element exists, performs the given action on it,
+         * returning {@code true}; else returns {@code false}.  If the {@code this_}
+         * Spliterator is {@link Spliterator#ORDERED} the action is performed on the
+         * next element in encounter order.  Exceptions thrown by the
+         * action are relayed to the caller.
+         *
          * <p><b>Implementation Requirements:</b><br>
          * If the action is an instance of {@code IntConsumer} then it is cast
          * to {@code IntConsumer} and passed to
@@ -232,13 +237,13 @@ public final class Spliterators {
          * the action is adapted to an instance of {@code IntConsumer}, by
          * boxing the argument of {@code IntConsumer}, and then passed to
          * {@link Spliterator.OfInt#tryAdvance(java8.util.function.IntConsumer)}.
-	     *
-	     * @param this_ the Spliterator to use
-	     * @param action The action to execute
-	     * @return {@code false} if no remaining elements existed
-	     * upon entry to this method, else {@code true}.
-	     * @throws NullPointerException if the specified {@code this_} Spliterator is null
-	     * @throws NullPointerException if the specified action is null
+         *
+         * @param this_ the Spliterator to use
+         * @param action The action to execute
+         * @return {@code false} if no remaining elements existed
+         * upon entry to this method, else {@code true}.
+         * @throws NullPointerException if the specified {@code this_} Spliterator is null
+         * @throws NullPointerException if the specified action is null
          */
         public static boolean tryAdvance(Spliterator.OfInt this_, Consumer<? super Integer> action) {
             if (action instanceof IntConsumer) {
@@ -250,12 +255,12 @@ public final class Spliterators {
         }
 
         /**
-	     * Performs the given action for each remaining element, sequentially in
-	     * the current thread, until all elements have been processed or the action
-	     * throws an exception.  If the {@code this_} Spliterator is {@link Spliterator#ORDERED}, actions
-	     * are performed in encounter order.  Exceptions thrown by the action
-	     * are relayed to the caller.
-	     *
+         * Performs the given action for each remaining element, sequentially in
+         * the current thread, until all elements have been processed or the action
+         * throws an exception.  If the {@code this_} Spliterator is {@link Spliterator#ORDERED}, actions
+         * are performed in encounter order.  Exceptions thrown by the action
+         * are relayed to the caller.
+         *
          * <p><b>Implementation Requirements:</b><br>
          * If the action is an instance of {@code IntConsumer} then it is cast
          * to {@code IntConsumer} and passed to
@@ -263,28 +268,28 @@ public final class Spliterators {
          * the action is adapted to an instance of {@code IntConsumer}, by
          * boxing the argument of {@code IntConsumer}, and then passed to
          * {@link Spliterator.OfInt#forEachRemaining(java8.util.function.IntConsumer)}.
-         * 
+         *
          * @param this_ the Spliterator to use
-	     * @param action The action to execute
-	     * @throws NullPointerException if the specified {@code this_} Spliterator is null
-	     * @throws NullPointerException if the specified action is null
+         * @param action The action to execute
+         * @throws NullPointerException if the specified {@code this_} Spliterator is null
+         * @throws NullPointerException if the specified action is null
          */
         public static void forEachRemaining(Spliterator.OfInt this_, Consumer<? super Integer> action) {
             if (action instanceof IntConsumer) {
-            	this_.forEachRemaining((IntConsumer) action);
+                this_.forEachRemaining((IntConsumer) action);
             }
             else {
                 this_.forEachRemaining((IntConsumer) action::accept);
             }
         }
 
-    	private OfInt() {
-    		throw new AssertionError();
-    	}
+        private OfInt() {
+            throw new AssertionError();
+        }
     }
 
     /**
-     * Static default implementations for the Java 8 default methods of {@link Spliterator.OfLong} 
+     * Static default implementations for the Java 8 default methods of {@link Spliterator.OfLong}
      */
     public static final class OfLong {
         /**
@@ -298,7 +303,7 @@ public final class Spliterators {
          * The default implementation repeatedly invokes {@link #tryAdvance}
          * until it returns {@code false}.  It should be overridden whenever
          * possible.
-         * 
+         *
          * @param this_ the Spliterator whose remaing elements should be processed
          * @param action The action to execute
          * @throws NullPointerException if the specified {@code this_} Spliterator is null
@@ -309,12 +314,12 @@ public final class Spliterators {
         }
 
         /**
-	     * If a remaining element exists, performs the given action on it,
-	     * returning {@code true}; else returns {@code false}.  If the {@code this_}
-	     * Spliterator is {@link Spliterator#ORDERED} the action is performed on the
-	     * next element in encounter order.  Exceptions thrown by the
-	     * action are relayed to the caller.
-	     * 
+         * If a remaining element exists, performs the given action on it,
+         * returning {@code true}; else returns {@code false}.  If the {@code this_}
+         * Spliterator is {@link Spliterator#ORDERED} the action is performed on the
+         * next element in encounter order.  Exceptions thrown by the
+         * action are relayed to the caller.
+         *
          * <p><b>Implementation Requirements:</b><br>
          * If the action is an instance of {@code LongConsumer} then it is cast
          * to {@code LongConsumer} and passed to
@@ -322,13 +327,13 @@ public final class Spliterators {
          * the action is adapted to an instance of {@code LongConsumer}, by
          * boxing the argument of {@code LongConsumer}, and then passed to
          * {@link Spliterator.OfLong#tryAdvance(java8.util.function.LongConsumer)}.
-	     *
-	     * @param this_ the Spliterator to use
-	     * @param action The action to execute
-	     * @return {@code false} if no remaining elements existed
-	     * upon entry to this method, else {@code true}.
-	     * @throws NullPointerException if the specified {@code this_} Spliterator is null
-	     * @throws NullPointerException if the specified action is null
+         *
+         * @param this_ the Spliterator to use
+         * @param action The action to execute
+         * @return {@code false} if no remaining elements existed
+         * upon entry to this method, else {@code true}.
+         * @throws NullPointerException if the specified {@code this_} Spliterator is null
+         * @throws NullPointerException if the specified action is null
          */
         public static boolean tryAdvance(Spliterator.OfLong this_, Consumer<? super Long> action) {
             if (action instanceof LongConsumer) {
@@ -340,12 +345,12 @@ public final class Spliterators {
         }
 
         /**
-	     * Performs the given action for each remaining element, sequentially in
-	     * the current thread, until all elements have been processed or the action
-	     * throws an exception.  If the {@code this_} Spliterator is {@link Spliterator#ORDERED}, actions
-	     * are performed in encounter order.  Exceptions thrown by the action
-	     * are relayed to the caller.
-	     *
+         * Performs the given action for each remaining element, sequentially in
+         * the current thread, until all elements have been processed or the action
+         * throws an exception.  If the {@code this_} Spliterator is {@link Spliterator#ORDERED}, actions
+         * are performed in encounter order.  Exceptions thrown by the action
+         * are relayed to the caller.
+         *
          * <p><b>Implementation Requirements:</b><br>
          * If the action is an instance of {@code LongConsumer} then it is cast
          * to {@code LongConsumer} and passed to
@@ -353,28 +358,28 @@ public final class Spliterators {
          * the action is adapted to an instance of {@code LongConsumer}, by
          * boxing the argument of {@code LongConsumer}, and then passed to
          * {@link Spliterator.OfLong#forEachRemaining(java8.util.function.LongConsumer)}.
-         * 
+         *
          * @param this_ the Spliterator to use
-	     * @param action The action to execute
-	     * @throws NullPointerException if the specified {@code this_} Spliterator is null
-	     * @throws NullPointerException if the specified action is null
+         * @param action The action to execute
+         * @throws NullPointerException if the specified {@code this_} Spliterator is null
+         * @throws NullPointerException if the specified action is null
          */
         public static void forEachRemaining(Spliterator.OfLong this_, Consumer<? super Long> action) {
             if (action instanceof LongConsumer) {
-            	this_.forEachRemaining((LongConsumer) action);
+                this_.forEachRemaining((LongConsumer) action);
             }
             else {
                 this_.forEachRemaining((LongConsumer) action::accept);
             }
         }
 
-    	private OfLong() {
-    		throw new AssertionError();
-    	}
+        private OfLong() {
+            throw new AssertionError();
+        }
     }
 
     /**
-     * Static default implementations for the Java 8 default methods of {@link Spliterator.OfDouble} 
+     * Static default implementations for the Java 8 default methods of {@link Spliterator.OfDouble}
      */
     public static final class OfDouble {
         /**
@@ -388,7 +393,7 @@ public final class Spliterators {
          * The default implementation repeatedly invokes {@link #tryAdvance}
          * until it returns {@code false}.  It should be overridden whenever
          * possible.
-         * 
+         *
          * @param this_ the Spliterator whose remaining elements should be processed
          * @param action The action to execute
          * @throws NullPointerException if the specified {@code this_} Spliterator is null
@@ -399,12 +404,12 @@ public final class Spliterators {
         }
 
         /**
-	     * If a remaining element exists, performs the given action on it,
-	     * returning {@code true}; else returns {@code false}.  If the {@code this_}
-	     * Spliterator is {@link Spliterator#ORDERED} the action is performed on the
-	     * next element in encounter order.  Exceptions thrown by the
-	     * action are relayed to the caller.
-	     * 
+         * If a remaining element exists, performs the given action on it,
+         * returning {@code true}; else returns {@code false}.  If the {@code this_}
+         * Spliterator is {@link Spliterator#ORDERED} the action is performed on the
+         * next element in encounter order.  Exceptions thrown by the
+         * action are relayed to the caller.
+         *
          * <p><b>Implementation Requirements:</b><br>
          * If the action is an instance of {@code DoubleConsumer} then it is
          * cast to {@code DoubleConsumer} and passed to
@@ -412,13 +417,13 @@ public final class Spliterators {
          * the action is adapted to an instance of {@code DoubleConsumer}, by
          * boxing the argument of {@code DoubleConsumer}, and then passed to
          * {@link Spliterator.OfDouble#tryAdvance(java8.util.function.DoubleConsumer)}.
-	     *
-	     * @param this_ the Spliterator to use
-	     * @param action The action to execute
-	     * @return {@code false} if no remaining elements existed
-	     * upon entry to this method, else {@code true}.
-	     * @throws NullPointerException if the specified {@code this_} Spliterator is null
-	     * @throws NullPointerException if the specified action is null
+         *
+         * @param this_ the Spliterator to use
+         * @param action The action to execute
+         * @return {@code false} if no remaining elements existed
+         * upon entry to this method, else {@code true}.
+         * @throws NullPointerException if the specified {@code this_} Spliterator is null
+         * @throws NullPointerException if the specified action is null
          */
         public static boolean tryAdvance(Spliterator.OfDouble this_, Consumer<? super Double> action) {
             if (action instanceof DoubleConsumer) {
@@ -430,12 +435,12 @@ public final class Spliterators {
         }
 
         /**
-	     * Performs the given action for each remaining element, sequentially in
-	     * the current thread, until all elements have been processed or the action
-	     * throws an exception.  If the {@code this_} Spliterator is {@link Spliterator#ORDERED}, actions
-	     * are performed in encounter order.  Exceptions thrown by the action
-	     * are relayed to the caller.
-	     *
+         * Performs the given action for each remaining element, sequentially in
+         * the current thread, until all elements have been processed or the action
+         * throws an exception.  If the {@code this_} Spliterator is {@link Spliterator#ORDERED}, actions
+         * are performed in encounter order.  Exceptions thrown by the action
+         * are relayed to the caller.
+         *
          * <p><b>Implementation Requirements:</b><br>
          * If the action is an instance of {@code DoubleConsumer} then it is
          * cast to {@code DoubleConsumer} and passed to
@@ -444,24 +449,24 @@ public final class Spliterators {
          * {@code DoubleConsumer}, by boxing the argument of
          * {@code DoubleConsumer}, and then passed to
          * {@link Spliterator.OfDouble#forEachRemaining(java8.util.function.DoubleConsumer)}.
-         * 
+         *
          * @param this_ the Spliterator to use
-	     * @param action The action to execute
-	     * @throws NullPointerException if the specified {@code this_} Spliterator is null
-	     * @throws NullPointerException if the specified action is null
+         * @param action The action to execute
+         * @throws NullPointerException if the specified {@code this_} Spliterator is null
+         * @throws NullPointerException if the specified action is null
          */
         public static void forEachRemaining(Spliterator.OfDouble this_, Consumer<? super Double> action) {
             if (action instanceof DoubleConsumer) {
-            	this_.forEachRemaining((DoubleConsumer) action);
+                this_.forEachRemaining((DoubleConsumer) action);
             }
             else {
                 this_.forEachRemaining((DoubleConsumer) action::accept);
             }
         }
 
-    	private OfDouble() {
-    		throw new AssertionError();
-    	}
+        private OfDouble() {
+            throw new AssertionError();
+        }
     }
 
     // Empty spliterators
@@ -822,7 +827,7 @@ public final class Spliterators {
 	 * types listed below or a {@code Spliterator} using the given collection's
 	 * {@link java.util.Collection#iterator()} as the source of elements, and
 	 * reporting its {@link java.util.Collection#size()} as its initial size.
-	 * 
+	 *
 	 * <p>
 	 * In the latter case, if the given collection implements one of the
 	 * interfaces {@link java.util.List}, {@link java.util.Set} or
@@ -837,13 +842,14 @@ public final class Spliterators {
 	 * <p>
 	 * Currently, the collections that have specializations available are the
 	 * following:
-	 * 
+	 *
 	 * <ul>
 	 * <li>java.util.ArrayList</li>
 	 * <li>java.util.Arrays.ArrayList</li>
 	 * <li>java.util.ArrayDeque</li>
 	 * <li>java.util.Vector</li>
 	 * <li>java.util.LinkedList</li>
+	 * <li>java.util.HashSet</li>
 	 * <li>java.util.LinkedHashSet</li>
 	 * <li>java.util.PriorityQueue</li>
 	 * <li>java.util.concurrent.ArrayBlockingQueue</li>
@@ -852,6 +858,8 @@ public final class Spliterators {
 	 * <li>java.util.concurrent.PriorityBlockingQueue</li>
 	 * <li>java.util.concurrent.CopyOnWriteArrayList</li>
 	 * <li>java.util.concurrent.CopyOnWriteArraySet</li>
+	 * <li>The collections returned from the java.util.HashMap methods
+	 * #keySet(), #entrySet() and #values()</li>
 	 * </ul>
 	 *
 	 * <p>
@@ -861,7 +869,7 @@ public final class Spliterators {
 	 * <em><a href="../Spliterator.html#binding">late-binding</a></em>, inherits
 	 * the <em>fail-fast</em> properties of the collection's iterator, and
 	 * implements {@code trySplit} to permit limited parallelism.
-	 * 
+	 *
 	 * @param <T>
 	 *            Type of elements
 	 * @param c
@@ -872,94 +880,129 @@ public final class Spliterators {
 	 *             if the given collection is {@code null}
 	 */
     public static <T> Spliterator<T> spliterator(Collection<? extends T> c) {
-		Objects.requireNonNull(c);
+        Objects.requireNonNull(c);
 
-		if (c instanceof List) {
-			return listSpliterator((List<T>) c);
-		}
-		if (c instanceof Set) {
-			return setSpliterator((Set<T>) c);
-		}
-		if (c instanceof Queue) {
-			return queueSpliterator((Queue<T>) c);
-		}
+        if (JRE_HAS_STREAMS && JRE_DELEGATION_ENABLED) {
+            return jreDelegatingSpliterator(c);
+        }
 
-		// default (anything else)
-		return spliterator(c, 0);
+        String className = c.getClass().getName();
+
+        if (c instanceof List) {
+            return listSpliterator((List<T>) c, className);
+        }
+        if (c instanceof Set) {
+            return setSpliterator((Set<T>) c, className);
+        }
+        if (c instanceof Queue) {
+            return queueSpliterator((Queue<T>) c);
+        }
+
+        if ((NATIVE_SPECIALIZATION /*|| IS_ANDROID*/) && "java.util.HashMap$Values".equals(className)) {
+            return HMSpliterators.getValuesSpliterator((Collection<T>) c);
+        }
+
+        // default (anything else)
+        return spliterator(c, 0);
     }
 
-    private static <T> Spliterator<T> listSpliterator(List<? extends T> c) {
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof ArrayList) {
-			return ArrayListSpliterator.spliterator((ArrayList<T>) c);
+    private static <T> Spliterator<T> listSpliterator(List<? extends T> c, String className) {
+		if (NATIVE_SPECIALIZATION || IS_ANDROID) {
+			if (c instanceof ArrayList) {
+				return ArrayListSpliterator.spliterator((ArrayList<T>) c);
+			}
+
+			if ("java.util.Arrays$ArrayList".equals(className)) {
+				return ArraysArrayListSpliterator.spliterator((List<T>) c);
+			}
+
+			if (c instanceof CopyOnWriteArrayList) {
+				return CopyOnWriteArrayListSpliterator
+						.spliterator((CopyOnWriteArrayList<T>) c);
+			}
+			if (c instanceof LinkedList) {
+				return LinkedListSpliterator.spliterator((LinkedList<T>) c);
+			}
+			if (c instanceof Vector) {
+				return VectorSpliterator.spliterator((Vector<T>) c);
+			}
 		}
 
-		String className = c.getClass().getName();
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && "java.util.Arrays$ArrayList".equals(className)) {
-			return ArraysArrayListSpliterator.spliterator((List<T>) c);
-		}
-
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof CopyOnWriteArrayList) {
-			return CopyOnWriteArrayListSpliterator
-					.spliterator((CopyOnWriteArrayList<T>) c);
-		}
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof LinkedList) {
-			return LinkedListSpliterator.spliterator((LinkedList<T>) c);
-		}
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof Vector) {
-			return VectorSpliterator.spliterator((Vector<T>) c);
-		}
-
-		// default from j.u.List
-		return spliterator(c, Spliterator.ORDERED);
+        // default from j.u.List
+        return spliterator(c, Spliterator.ORDERED);
     }
 
-    private static <T> Spliterator<T> setSpliterator(Set<? extends T> c) {
-		if (c instanceof LinkedHashSet) {
-			return spliterator(c, Spliterator.DISTINCT | Spliterator.ORDERED);
-		}
-		// default from j.u.SortedSet
-		if (c instanceof SortedSet) {
-			return new IteratorSpliterator<T>(c, Spliterator.DISTINCT
-					| Spliterator.SORTED | Spliterator.ORDERED) {
-				@Override
-				public Comparator<? super T> getComparator() {
-					return ((SortedSet<T>) c).comparator();
-				}
-			};
-		}
+    private static <T> Spliterator<T> setSpliterator(Set<? extends T> c, String className) {
+        if (NATIVE_SPECIALIZATION /*|| IS_ANDROID*/) {
+            if ("java.util.HashMap$EntrySet".equals(className)) {
+                return (Spliterator<T>) HMSpliterators
+                        .<Object, Object> getEntrySetSpliterator((Set<Map.Entry<Object, Object>>) c);
+            }
+            if ("java.util.HashMap$KeySet".equals(className)) {
+                return HMSpliterators.getKeySetSpliterator((Set<T>) c);
+            }
+        }
 
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof CopyOnWriteArraySet) {
-			return CopyOnWriteArraySetSpliterator
-					.spliterator((CopyOnWriteArraySet<T>) c);
-		}
+        if (c instanceof LinkedHashSet) {
+            return spliterator(c, Spliterator.DISTINCT | Spliterator.ORDERED);
+        }
 
-		// default from j.u.Set
-		return Spliterators.spliterator(c, Spliterator.DISTINCT);
+        if (NATIVE_SPECIALIZATION /*|| IS_ANDROID*/) {
+            if (c instanceof HashSet) {
+            	return HMSpliterators.getHashSetSpliterator((HashSet<T>) c);
+            }
+        }
+
+        // default from j.u.SortedSet
+        if (c instanceof SortedSet) {
+            return new IteratorSpliterator<T>(c, Spliterator.DISTINCT
+                    | Spliterator.SORTED | Spliterator.ORDERED) {
+                @Override
+                public Comparator<? super T> getComparator() {
+                    return ((SortedSet<T>) c).comparator();
+                }
+            };
+        }
+
+        if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof CopyOnWriteArraySet) {
+            return CopyOnWriteArraySetSpliterator
+                    .spliterator((CopyOnWriteArraySet<T>) c);
+        }
+
+        // default from j.u.Set
+        return Spliterators.spliterator(c, Spliterator.DISTINCT);
     }
 
     private static <T> Spliterator<T> queueSpliterator(Queue<? extends T> c) {
-		if (c instanceof ArrayBlockingQueue) {
-			return spliterator(c, Spliterator.ORDERED | Spliterator.NONNULL
-					| Spliterator.CONCURRENT);
-		}
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof LinkedBlockingQueue) {
-			return LBQSpliterator.spliterator((LinkedBlockingQueue<T>) c);
-		}
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof ArrayDeque) {
-			return ArrayDequeSpliterator.spliterator((ArrayDeque<T>) c);
-		}
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof LinkedBlockingDeque) {
-			return LBDSpliterator.spliterator((LinkedBlockingDeque<T>) c);
-		}
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof PriorityBlockingQueue) {
-			return PriorityBlockingQueueSpliterator.spliterator((PriorityBlockingQueue<T>) c);
-		}
-		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof PriorityQueue) {
-			return PriorityQueueSpliterator.spliterator((PriorityQueue<T>) c);
-		}
+        if (c instanceof ArrayBlockingQueue) {
+            return spliterator(c, Spliterator.ORDERED | Spliterator.NONNULL
+                    | Spliterator.CONCURRENT);
+        }
 
-		// default from j.u.Collection
-		return spliterator(c, 0);
+        if (NATIVE_SPECIALIZATION || IS_ANDROID) {
+        	if (c instanceof LinkedBlockingQueue) {
+        		return LBQSpliterator.spliterator((LinkedBlockingQueue<T>) c);
+        	}
+        	if (c instanceof ArrayDeque) {
+        		return ArrayDequeSpliterator.spliterator((ArrayDeque<T>) c);
+        	}
+        	if (c instanceof LinkedBlockingDeque) {
+        		return LBDSpliterator.spliterator((LinkedBlockingDeque<T>) c);
+        	}
+        	if (c instanceof PriorityBlockingQueue) {
+        		return PriorityBlockingQueueSpliterator.spliterator((PriorityBlockingQueue<T>) c);
+        	}
+        	if (c instanceof PriorityQueue) {
+        		return PriorityQueueSpliterator.spliterator((PriorityQueue<T>) c);
+        	}
+        }
+
+        // default from j.u.Collection
+        return spliterator(c, 0);
+    }
+
+    private static <T> Spliterator<T> jreDelegatingSpliterator(Collection<? extends T> c) {
+        return new DelegatingSpliterator<T>(((Collection<T>) c).spliterator());
     }
 
     // Iterator-based spliterators
@@ -1259,10 +1302,10 @@ public final class Spliterators {
                 }
             }
 
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException("remove");
-			}
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove");
+            }
         }
 
         return new Adapter();
@@ -1309,20 +1352,20 @@ public final class Spliterators {
                 }
             }
 
-			@Override
-			public Integer next() {
-				return nextInt();
-			}
+            @Override
+            public Integer next() {
+                return nextInt();
+            }
 
-			@Override
-			public void forEachRemaining(IntConsumer action) {
-				Iterators.forEachRemaining(this, action);
-			}
+            @Override
+            public void forEachRemaining(IntConsumer action) {
+                Iterators.forEachRemaining(this, action);
+            }
 
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException("remove");
-			}
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove");
+            }
         }
 
         return new Adapter();
@@ -1369,20 +1412,20 @@ public final class Spliterators {
                 }
             }
 
-			@Override
-			public Long next() {
-				return nextLong();
-			}
+            @Override
+            public Long next() {
+                return nextLong();
+            }
 
-			@Override
-			public void forEachRemaining(LongConsumer action) {
-				Iterators.forEachRemaining(this, action);
-			}
+            @Override
+            public void forEachRemaining(LongConsumer action) {
+                Iterators.forEachRemaining(this, action);
+            }
 
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException("remove");
-			}
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove");
+            }
         }
 
         return new Adapter();
@@ -1429,20 +1472,20 @@ public final class Spliterators {
                 }
             }
 
-			@Override
-			public Double next() {
-				return nextDouble();
-			}
+            @Override
+            public Double next() {
+                return nextDouble();
+            }
 
-			@Override
-			public void forEachRemaining(DoubleConsumer action) {
-				Iterators.forEachRemaining(this, action);
-			}
+            @Override
+            public void forEachRemaining(DoubleConsumer action) {
+                Iterators.forEachRemaining(this, action);
+            }
 
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException("remove");
-			}
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove");
+            }
         }
 
         return new Adapter();
@@ -1480,20 +1523,20 @@ public final class Spliterators {
                 implements Spliterator<T> {
             OfRef() { }
 
-			@Override
-			public long getExactSizeIfKnown() {
-				return Spliterators.getExactSizeIfKnown(this);
-			}
+            @Override
+            public long getExactSizeIfKnown() {
+                return Spliterators.getExactSizeIfKnown(this);
+            }
 
-			@Override
-			public boolean hasCharacteristics(int characteristics) {
-				return Spliterators.hasCharacteristics(this, characteristics);
-			}
+            @Override
+            public boolean hasCharacteristics(int characteristics) {
+                return Spliterators.hasCharacteristics(this, characteristics);
+            }
 
-			@Override
-			public Comparator<? super T> getComparator() {
-				return Spliterators.getComparator(this);
-			}
+            @Override
+            public Comparator<? super T> getComparator() {
+                return Spliterators.getComparator(this);
+            }
         }
 
         private static final class OfInt
@@ -1501,30 +1544,30 @@ public final class Spliterators {
                 implements Spliterator.OfInt {
             OfInt() { }
 
-			@Override
-			public long getExactSizeIfKnown() {
-				return Spliterators.getExactSizeIfKnown(this);
-			}
+            @Override
+            public long getExactSizeIfKnown() {
+                return Spliterators.getExactSizeIfKnown(this);
+            }
 
-			@Override
-			public boolean hasCharacteristics(int characteristics) {
-				return Spliterators.hasCharacteristics(this, characteristics);
-			}
+            @Override
+            public boolean hasCharacteristics(int characteristics) {
+                return Spliterators.hasCharacteristics(this, characteristics);
+            }
 
-			@Override
-			public Comparator<? super Integer> getComparator() {
-				return Spliterators.getComparator(this);
-			}
+            @Override
+            public Comparator<? super Integer> getComparator() {
+                return Spliterators.getComparator(this);
+            }
 
-			@Override
-			public boolean tryAdvance(Consumer<? super Integer> action) {
-				return Spliterators.OfInt.tryAdvance(this, action);
-			}
+            @Override
+            public boolean tryAdvance(Consumer<? super Integer> action) {
+                return Spliterators.OfInt.tryAdvance(this, action);
+            }
 
-	        @Override
-			public void forEachRemaining(Consumer<? super Integer> action) {
-				Spliterators.OfInt.forEachRemaining(this, action);
-			}
+            @Override
+            public void forEachRemaining(Consumer<? super Integer> action) {
+                Spliterators.OfInt.forEachRemaining(this, action);
+            }
         }
 
         private static final class OfLong
@@ -1532,30 +1575,30 @@ public final class Spliterators {
                 implements Spliterator.OfLong {
             OfLong() { }
 
-			@Override
-			public long getExactSizeIfKnown() {
-				return Spliterators.getExactSizeIfKnown(this);
-			}
+            @Override
+            public long getExactSizeIfKnown() {
+                return Spliterators.getExactSizeIfKnown(this);
+            }
 
-			@Override
-			public boolean hasCharacteristics(int characteristics) {
-				return Spliterators.hasCharacteristics(this, characteristics);
-			}
+            @Override
+            public boolean hasCharacteristics(int characteristics) {
+                return Spliterators.hasCharacteristics(this, characteristics);
+            }
 
-			@Override
-			public Comparator<? super Long> getComparator() {
-				return Spliterators.getComparator(this);
-			}
+            @Override
+            public Comparator<? super Long> getComparator() {
+                return Spliterators.getComparator(this);
+            }
 
-	        @Override
-			public boolean tryAdvance(Consumer<? super Long> action) {
-				return Spliterators.OfLong.tryAdvance(this, action);
-			}
+            @Override
+            public boolean tryAdvance(Consumer<? super Long> action) {
+                return Spliterators.OfLong.tryAdvance(this, action);
+            }
 
-	        @Override
-			public void forEachRemaining(Consumer<? super Long> action) {
-				Spliterators.OfLong.forEachRemaining(this, action);
-			}
+            @Override
+            public void forEachRemaining(Consumer<? super Long> action) {
+                Spliterators.OfLong.forEachRemaining(this, action);
+            }
         }
 
         private static final class OfDouble
@@ -1563,30 +1606,30 @@ public final class Spliterators {
                 implements Spliterator.OfDouble {
             OfDouble() { }
 
-			@Override
-			public long getExactSizeIfKnown() {
-				return Spliterators.getExactSizeIfKnown(this);
-			}
+            @Override
+            public long getExactSizeIfKnown() {
+                return Spliterators.getExactSizeIfKnown(this);
+            }
 
-			@Override
-			public boolean hasCharacteristics(int characteristics) {
-				return Spliterators.hasCharacteristics(this, characteristics);
-			}
+            @Override
+            public boolean hasCharacteristics(int characteristics) {
+                return Spliterators.hasCharacteristics(this, characteristics);
+            }
 
-			@Override
-			public Comparator<? super Double> getComparator() {
-				return Spliterators.getComparator(this);
-			}
+            @Override
+            public Comparator<? super Double> getComparator() {
+                return Spliterators.getComparator(this);
+            }
 
-	        @Override
-			public boolean tryAdvance(Consumer<? super Double> action) {
-				return Spliterators.OfDouble.tryAdvance(this, action);
-			}
+            @Override
+            public boolean tryAdvance(Consumer<? super Double> action) {
+                return Spliterators.OfDouble.tryAdvance(this, action);
+            }
 
-	        @Override
-			public void forEachRemaining(Consumer<? super Double> action) {
-				Spliterators.OfDouble.forEachRemaining(this, action);
-			}
+            @Override
+            public void forEachRemaining(Consumer<? super Double> action) {
+                Spliterators.OfDouble.forEachRemaining(this, action);
+            }
         }
     }
 
@@ -1637,16 +1680,16 @@ public final class Spliterators {
         }
 
         @Override
-		public long getExactSizeIfKnown() {
-			return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Spliterator<T> trySplit() {
             int lo = index, mid = (lo + fence) >>> 1;
             return (lo >= mid)
@@ -1761,17 +1804,17 @@ public final class Spliterators {
             return false;
         }
 
-		@Override
-		public boolean tryAdvance(Consumer<? super Integer> action) {
-			return Spliterators.OfInt.tryAdvance(this, action);
-		}
+        @Override
+        public boolean tryAdvance(Consumer<? super Integer> action) {
+            return Spliterators.OfInt.tryAdvance(this, action);
+        }
 
         @Override
-		public void forEachRemaining(Consumer<? super Integer> action) {
-			Spliterators.OfInt.forEachRemaining(this, action);
-		}
+        public void forEachRemaining(Consumer<? super Integer> action) {
+            Spliterators.OfInt.forEachRemaining(this, action);
+        }
 
-		@Override
+        @Override
         public long estimateSize() { return (long)(fence - index); }
 
         @Override
@@ -1780,16 +1823,16 @@ public final class Spliterators {
         }
 
         @Override
-		public long getExactSizeIfKnown() {
-        	return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Comparator<? super Integer> getComparator() {
             if (hasCharacteristics(Spliterator.SORTED))
                 return null;
@@ -1854,11 +1897,11 @@ public final class Spliterators {
         }
 
         @Override
-		public void forEachRemaining(Consumer<? super Long> action) {
-			Spliterators.OfLong.forEachRemaining(this, action);
-		}
+        public void forEachRemaining(Consumer<? super Long> action) {
+            Spliterators.OfLong.forEachRemaining(this, action);
+        }
 
-		@Override
+        @Override
         public boolean tryAdvance(LongConsumer action) {
             if (action == null)
                 throw new NullPointerException();
@@ -1870,11 +1913,11 @@ public final class Spliterators {
         }
 
         @Override
-		public boolean tryAdvance(Consumer<? super Long> action) {
-			return Spliterators.OfLong.tryAdvance(this, action);
-		}
+        public boolean tryAdvance(Consumer<? super Long> action) {
+            return Spliterators.OfLong.tryAdvance(this, action);
+        }
 
-		@Override
+        @Override
         public long estimateSize() { return (long)(fence - index); }
 
         @Override
@@ -1883,16 +1926,16 @@ public final class Spliterators {
         }
 
         @Override
-		public long getExactSizeIfKnown() {
-        	return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Comparator<? super Long> getComparator() {
             if (hasCharacteristics(Spliterator.SORTED))
                 return null;
@@ -1957,11 +2000,11 @@ public final class Spliterators {
         }
 
         @Override
-		public void forEachRemaining(Consumer<? super Double> action) {
-			Spliterators.OfDouble.forEachRemaining(this, action);
-		}
+        public void forEachRemaining(Consumer<? super Double> action) {
+            Spliterators.OfDouble.forEachRemaining(this, action);
+        }
 
-		@Override
+        @Override
         public boolean tryAdvance(DoubleConsumer action) {
             if (action == null)
                 throw new NullPointerException();
@@ -1973,11 +2016,11 @@ public final class Spliterators {
         }
 
         @Override
-		public boolean tryAdvance(Consumer<? super Double> action) {
-			return Spliterators.OfDouble.tryAdvance(this, action);
-		}
+        public boolean tryAdvance(Consumer<? super Double> action) {
+            return Spliterators.OfDouble.tryAdvance(this, action);
+        }
 
-		@Override
+        @Override
         public long estimateSize() { return (long)(fence - index); }
 
         @Override
@@ -1986,16 +2029,16 @@ public final class Spliterators {
         }
 
         @Override
-		public long getExactSizeIfKnown() {
-        	return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Comparator<? super Double> getComparator() {
             if (hasCharacteristics(Spliterator.SORTED))
                 return null;
@@ -2605,16 +2648,16 @@ public final class Spliterators {
         public int characteristics() { return characteristics; }
 
         @Override
-		public long getExactSizeIfKnown() {
-			return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Comparator<? super T> getComparator() {
             if (hasCharacteristics(Spliterator.SORTED)) {
                 return null;
@@ -2715,16 +2758,16 @@ public final class Spliterators {
         public int characteristics() { return characteristics; }
 
         @Override
-		public long getExactSizeIfKnown() {
-        	return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Comparator<? super Integer> getComparator() {
             if (hasCharacteristics(Spliterator.SORTED)) {
                 return null;
@@ -2732,15 +2775,15 @@ public final class Spliterators {
             throw new IllegalStateException();
         }
 
-		@Override
-		public boolean tryAdvance(Consumer<? super Integer> action) {
-			return Spliterators.OfInt.tryAdvance(this, action);
-		}
+        @Override
+        public boolean tryAdvance(Consumer<? super Integer> action) {
+            return Spliterators.OfInt.tryAdvance(this, action);
+        }
 
         @Override
-		public void forEachRemaining(Consumer<? super Integer> action) {
-			Spliterators.OfInt.forEachRemaining(this, action);
-		}
+        public void forEachRemaining(Consumer<? super Integer> action) {
+            Spliterators.OfInt.forEachRemaining(this, action);
+        }
     }
 
     static final class LongIteratorSpliterator implements Spliterator.OfLong {
@@ -2812,9 +2855,9 @@ public final class Spliterators {
         }
 
         @Override
-		public void forEachRemaining(Consumer<? super Long> action) {
-			Spliterators.OfLong.forEachRemaining(this, action);
-		}
+        public void forEachRemaining(Consumer<? super Long> action) {
+            Spliterators.OfLong.forEachRemaining(this, action);
+        }
 
         @Override
         public boolean tryAdvance(LongConsumer action) {
@@ -2827,9 +2870,9 @@ public final class Spliterators {
         }
 
         @Override
-		public boolean tryAdvance(Consumer<? super Long> action) {
-			return Spliterators.OfLong.tryAdvance(this, action);
-		}
+        public boolean tryAdvance(Consumer<? super Long> action) {
+            return Spliterators.OfLong.tryAdvance(this, action);
+        }
 
         @Override
         public long estimateSize() {
@@ -2840,16 +2883,16 @@ public final class Spliterators {
         public int characteristics() { return characteristics; }
 
         @Override
-		public long getExactSizeIfKnown() {
-        	return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Comparator<? super Long> getComparator() {
             if (hasCharacteristics(Spliterator.SORTED)) {
                 return null;
@@ -2927,9 +2970,9 @@ public final class Spliterators {
         }
 
         @Override
-		public void forEachRemaining(Consumer<? super Double> action) {
-			Spliterators.OfDouble.forEachRemaining(this, action);
-		}
+        public void forEachRemaining(Consumer<? super Double> action) {
+            Spliterators.OfDouble.forEachRemaining(this, action);
+        }
 
         @Override
         public boolean tryAdvance(DoubleConsumer action) {
@@ -2942,9 +2985,9 @@ public final class Spliterators {
         }
 
         @Override
-		public boolean tryAdvance(Consumer<? super Double> action) {
-			return Spliterators.OfDouble.tryAdvance(this, action);
-		}
+        public boolean tryAdvance(Consumer<? super Double> action) {
+            return Spliterators.OfDouble.tryAdvance(this, action);
+        }
 
         @Override
         public long estimateSize() {
@@ -2955,16 +2998,16 @@ public final class Spliterators {
         public int characteristics() { return characteristics; }
 
         @Override
-		public long getExactSizeIfKnown() {
-        	return Spliterators.getExactSizeIfKnown(this);
-		}
+        public long getExactSizeIfKnown() {
+            return Spliterators.getExactSizeIfKnown(this);
+        }
 
-		@Override
-		public boolean hasCharacteristics(int characteristics) {
-			return Spliterators.hasCharacteristics(this, characteristics);
-		}
+        @Override
+        public boolean hasCharacteristics(int characteristics) {
+            return Spliterators.hasCharacteristics(this, characteristics);
+        }
 
-		@Override
+        @Override
         public Comparator<? super Double> getComparator() {
             if (hasCharacteristics(Spliterator.SORTED)) {
                 return null;
@@ -2974,44 +3017,82 @@ public final class Spliterators {
     }
 
     private static boolean getBooleanPropertyValue(final String property) {
-    	return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-			@Override
-			public Boolean run() {
-		        boolean value = true;
-		        try {
-		        	String s = System.getProperty(property, Boolean.TRUE.toString());
-		            value = (s == null) || s.trim().equalsIgnoreCase(Boolean.TRUE.toString());
-		        } catch (IllegalArgumentException ignore) {
-		        } catch (NullPointerException ignore) {
-		        }
-		        return value;
-			}
-		});
+        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                boolean value = true;
+                try {
+                    String s = System.getProperty(property, Boolean.TRUE.toString());
+                    value = (s == null) || s.trim().equalsIgnoreCase(Boolean.TRUE.toString());
+                } catch (IllegalArgumentException ignore) {
+                } catch (NullPointerException ignore) {
+                }
+                return value;
+            }
+        });
     }
 
     /**
      * Are we running on a Dalvik VM or maybe even ART?
+     * @return {@code true} if yes, otherwise {@code false}.
      */
     private static boolean isAndroid() {
-    	Class<?> clazz = null;
-    	try {
-    		clazz = Class.forName("android.util.DisplayMetrics");
-    	} catch (Throwable notPresent) {
-    		// ignore
-    	}
-    	return clazz != null;
+        Class<?> clazz = null;
+        try {
+            clazz = Class.forName("android.util.DisplayMetrics");
+        } catch (Throwable notPresent) {
+            // ignore
+        }
+        return clazz != null;
     }
 
     /**
      * Are we running on a Java 6 JRE?
+     * @return {@code true} if yes, otherwise {@code false}.
      */
-	private static boolean isJava6() {
-		String classVersion = System.getProperty("java.class.version");
-		if (classVersion != null && classVersion.length() >= 2) {
-			if (classVersion.startsWith("50")) {
-				return true;
-			}
-		}
-		return false;
-	}
+    private static boolean isJava6() {
+        String classVersion = System.getProperty("java.class.version");
+        if (classVersion != null && classVersion.length() >= 2) {
+            if (classVersion.startsWith("50")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Does the current JRE have the JSR 335 libraries?
+     * @return {@code true} if yes, otherwise {@code false}.
+     */
+    private static boolean isStreamEnabledJRE() {
+        // a) must have at least major version number 52 (Java 8)
+        String ver = System.getProperty("java.class.version", "45");
+        if (ver != null && ver.length() >= 2) {
+            ver = ver.substring(0, 2);
+            if ("52".compareTo(ver) > 0) {
+                return false;
+            }
+        }
+        // b) j.u.f.Consumer & j.u.Spliterator must exist
+        Class<?> c = null;
+        for (String cn : new String[] { "java.util.function.Consumer",
+                "java.util.Spliterator" }) {
+            try {
+                c = Class.forName(cn);
+            } catch (Exception ignore) {
+                return false;
+            }
+        }
+        // c) j.u.Collection must have a spliterator() method
+        Method m = null;
+        if (c != null) {
+            try {
+                m = Collection.class.getDeclaredMethod("spliterator",
+                        new Class<?>[0]);
+            } catch (Exception ignore) {
+                return false;
+            }
+        }
+        return m != null;
+    }
 }
