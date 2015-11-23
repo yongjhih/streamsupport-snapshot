@@ -51,6 +51,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
+import java8.util.Objects;
 import java8.util.function.Consumer;
 import java8.util.function.DoubleConsumer;
 import java8.util.function.IntConsumer;
@@ -913,7 +914,7 @@ public final class Spliterators {
             }
 
             if (c instanceof CopyOnWriteArrayList) {
-                return CopyOnWriteArrayListSpliterator
+                return COWArrayListSpliterator
                         .spliterator((CopyOnWriteArrayList<T>) c);
             }
             if (c instanceof LinkedList) {
@@ -961,7 +962,7 @@ public final class Spliterators {
         }
 
         if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof CopyOnWriteArraySet) {
-            return CopyOnWriteArraySetSpliterator
+            return COWArraySetSpliterator
                     .spliterator((CopyOnWriteArraySet<T>) c);
         }
 
@@ -986,10 +987,10 @@ public final class Spliterators {
                 return LBDSpliterator.spliterator((LinkedBlockingDeque<T>) c);
             }
             if (c instanceof PriorityBlockingQueue) {
-                return PriorityBlockingQueueSpliterator.spliterator((PriorityBlockingQueue<T>) c);
+                return PBQueueSpliterator.spliterator((PriorityBlockingQueue<T>) c);
             }
             if (c instanceof PriorityQueue) {
-                return PriorityQueueSpliterator.spliterator((PriorityQueue<T>) c);
+                return PQueueSpliterator.spliterator((PriorityQueue<T>) c);
             }
         }
 
@@ -1780,8 +1781,7 @@ public final class Spliterators {
         @Override
         public void forEachRemaining(IntConsumer action) {
             int[] a; int i, hi; // hoist accesses and checks from loop
-            if (action == null)
-                throw new NullPointerException();
+            Objects.requireNonNull(action);
             if ((a = array).length >= (hi = fence) &&
                 (i = index) >= 0 && i < (index = hi)) {
                 do { action.accept(a[i]); } while (++i < hi);
@@ -1790,8 +1790,7 @@ public final class Spliterators {
 
         @Override
         public boolean tryAdvance(IntConsumer action) {
-            if (action == null)
-                throw new NullPointerException();
+            Objects.requireNonNull(action);
             if (index >= 0 && index < fence) {
                 action.accept(array[index++]);
                 return true;
@@ -1883,8 +1882,7 @@ public final class Spliterators {
         @Override
         public void forEachRemaining(LongConsumer action) {
             long[] a; int i, hi; // hoist accesses and checks from loop
-            if (action == null)
-                throw new NullPointerException();
+            Objects.requireNonNull(action);
             if ((a = array).length >= (hi = fence) &&
                 (i = index) >= 0 && i < (index = hi)) {
                 do { action.accept(a[i]); } while (++i < hi);
@@ -1898,8 +1896,7 @@ public final class Spliterators {
 
         @Override
         public boolean tryAdvance(LongConsumer action) {
-            if (action == null)
-                throw new NullPointerException();
+            Objects.requireNonNull(action);
             if (index >= 0 && index < fence) {
                 action.accept(array[index++]);
                 return true;
@@ -1986,8 +1983,7 @@ public final class Spliterators {
         @Override
         public void forEachRemaining(DoubleConsumer action) {
             double[] a; int i, hi; // hoist accesses and checks from loop
-            if (action == null)
-                throw new NullPointerException();
+            Objects.requireNonNull(action);
             if ((a = array).length >= (hi = fence) &&
                 (i = index) >= 0 && i < (index = hi)) {
                 do { action.accept(a[i]); } while (++i < hi);
@@ -2001,8 +1997,7 @@ public final class Spliterators {
 
         @Override
         public boolean tryAdvance(DoubleConsumer action) {
-            if (action == null)
-                throw new NullPointerException();
+            Objects.requireNonNull(action);
             if (index >= 0 && index < fence) {
                 action.accept(array[index++]);
                 return true;
@@ -2887,13 +2882,12 @@ public final class Spliterators {
 
         @Override
         public void forEachRemaining(IntConsumer action) {
-            if (action == null) throw new NullPointerException();
-            Iterators.forEachRemaining(it, action);
+            Iterators.forEachRemaining(it, Objects.requireNonNull(action));
         }
 
         @Override
         public boolean tryAdvance(IntConsumer action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action);
             if (it.hasNext()) {
                 action.accept(it.nextInt());
                 return true;
@@ -3002,8 +2996,7 @@ public final class Spliterators {
 
         @Override
         public void forEachRemaining(LongConsumer action) {
-            if (action == null) throw new NullPointerException();
-            Iterators.forEachRemaining(it, action);
+            Iterators.forEachRemaining(it, Objects.requireNonNull(action));
         }
 
         @Override
@@ -3013,7 +3006,7 @@ public final class Spliterators {
 
         @Override
         public boolean tryAdvance(LongConsumer action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action);
             if (it.hasNext()) {
                 action.accept(it.nextLong());
                 return true;
@@ -3117,8 +3110,7 @@ public final class Spliterators {
 
         @Override
         public void forEachRemaining(DoubleConsumer action) {
-            if (action == null) throw new NullPointerException();
-            Iterators.forEachRemaining(it, action);
+            Iterators.forEachRemaining(it, Objects.requireNonNull(action));
         }
 
         @Override
@@ -3128,7 +3120,7 @@ public final class Spliterators {
 
         @Override
         public boolean tryAdvance(DoubleConsumer action) {
-            if (action == null) throw new NullPointerException();
+            Objects.requireNonNull(action);
             if (it.hasNext()) {
                 action.accept(it.nextDouble());
                 return true;
