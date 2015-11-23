@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+versions=(
+1.1.2
+1.1.3
+1.1.4
+1.1.5
+1.2
+1.2.1
+1.2.2
+1.3
+1.3.1
+1.3.2
+1.4
+)
+
+mkdir -p streamsupport/src/main
+for version in "${versions[@]}"; do
+    rm -fr streamsupport/src/main/java
+    cp -a .zip/streamsupport-${version}-src/src/main/java streamsupport/src/main/java
+    git add -A
+    sed -i "s/publishVersion = '.*/publishVersion = '${version}'/" streamsupport/build.gradle
+    git commit -am "$version"
+    git tag "$version" -f
+done
