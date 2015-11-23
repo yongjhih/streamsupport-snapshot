@@ -130,7 +130,11 @@ final class Nodes {
         Node.Builder<T> nodeBuilder = Nodes.builder(size, generator);
         nodeBuilder.begin(size);
         for (int i = 0; i < from && spliterator.tryAdvance(e -> { }); i++) { }
-        for (int i = 0; (i < size) && spliterator.tryAdvance(nodeBuilder); i++) { }
+        if (to == node.count()) {
+            spliterator.forEachRemaining(nodeBuilder);
+        } else {
+            for (int i = 0; i < size && spliterator.tryAdvance(nodeBuilder); i++) { }
+        }
         nodeBuilder.end();
         return nodeBuilder.build();
     }
@@ -151,7 +155,6 @@ final class Nodes {
         }
 
         private OfPrimitive() {
-            throw new AssertionError();
         }
     }
 
@@ -165,7 +168,11 @@ final class Nodes {
             Node.Builder.OfDouble nodeBuilder = Nodes.doubleBuilder(size);
             nodeBuilder.begin(size);
             for (int i = 0; i < from && spliterator.tryAdvance((DoubleConsumer) e -> { }); i++) { }
-            for (int i = 0; (i < size) && spliterator.tryAdvance((DoubleConsumer) nodeBuilder); i++) { }
+            if (to == this_.count()) {
+                spliterator.forEachRemaining((DoubleConsumer) nodeBuilder);
+            } else {
+                for (int i = 0; i < size && spliterator.tryAdvance((DoubleConsumer) nodeBuilder); i++) { }
+            }
             nodeBuilder.end();
             return nodeBuilder.build();
         }
@@ -217,7 +224,6 @@ final class Nodes {
         }
 
         private OfDouble () {
-            throw new AssertionError();
         }
     }
 
@@ -231,7 +237,11 @@ final class Nodes {
             Node.Builder.OfLong nodeBuilder = Nodes.longBuilder(size);
             nodeBuilder.begin(size);
             for (int i = 0; i < from && spliterator.tryAdvance((LongConsumer) e -> { }); i++) { }
-            for (int i = 0; (i < size) && spliterator.tryAdvance((LongConsumer) nodeBuilder); i++) { }
+            if (to == this_.count()) {
+                spliterator.forEachRemaining((LongConsumer) nodeBuilder);
+            } else {
+                for (int i = 0; i < size && spliterator.tryAdvance((LongConsumer) nodeBuilder); i++) { }
+            }
             nodeBuilder.end();
             return nodeBuilder.build();
         }
@@ -282,7 +292,6 @@ final class Nodes {
         }
 
         private OfLong() {
-            throw new AssertionError();
         }
     }
 
@@ -296,7 +305,11 @@ final class Nodes {
             Node.Builder.OfInt nodeBuilder = Nodes.intBuilder(size);
             nodeBuilder.begin(size);
             for (int i = 0; i < from && spliterator.tryAdvance((IntConsumer) e -> { }); i++) { }
-            for (int i = 0; (i < size) && spliterator.tryAdvance((IntConsumer) nodeBuilder); i++) { }
+            if (to == this_.count()) {
+                spliterator.forEachRemaining((IntConsumer) nodeBuilder);
+            } else {
+                for (int i = 0; i < size && spliterator.tryAdvance((IntConsumer) nodeBuilder); i++) { }
+            }
             nodeBuilder.end();
             return nodeBuilder.build();
         }
@@ -347,8 +360,15 @@ final class Nodes {
         }
 
         private OfInt() {
-            throw new AssertionError();
         }
+    }
+
+    /**
+     * @return an array generator for an array whose elements are of type T.
+     */
+    @SuppressWarnings("unchecked")
+    static <T> IntFunction<T[]> castingArray() {
+        return size -> (T[]) new Object[size];
     }
 
     // General shape-based node creation methods
@@ -1753,7 +1773,7 @@ final class Nodes {
 
         FixedNodeBuilder(long size, IntFunction<T[]> generator) {
             super(size, generator);
-            assert size < MAX_ARRAY_SIZE;
+//            assert size < MAX_ARRAY_SIZE;
         }
 
         @Override
@@ -1823,7 +1843,7 @@ final class Nodes {
     private static final class SpinedNodeBuilder<T>
             extends SpinedBuffer<T>
             implements Node<T>, Node.Builder<T> {
-        private boolean building = false;
+//        private boolean building = false;
 
         SpinedNodeBuilder() {} // Avoid creation of special accessor
 
@@ -1834,13 +1854,13 @@ final class Nodes {
 
         @Override
         public Spliterator<T> getSpliterator() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.getSpliterator();
         }
 
         @Override
         public void forEach(Consumer<? super T> consumer) {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.forEach(consumer);
         }
 
@@ -1867,15 +1887,15 @@ final class Nodes {
         //
         @Override
         public void begin(long size) {
-            assert !building : "was already building";
-            building = true;
+//            assert !building : "was already building";
+//            building = true;
             clear();
             ensureCapacity(size);
         }
 
         @Override
         public void accept(T t) {
-            assert building : "not building";
+//            assert building : "not building";
             super.accept(t);
         }
 
@@ -1902,26 +1922,26 @@ final class Nodes {
 
         @Override
         public void end() {
-            assert building : "was not building";
-            building = false;
+//            assert building : "was not building";
+//            building = false;
             // @@@ check begin(size) and size
         }
 
         @Override
         public void copyInto(T[] array, int offset) {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.copyInto(array, offset);
         }
 
         @Override
         public T[] asArray(IntFunction<T[]> arrayFactory) {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.asArray(arrayFactory);
         }
 
         @Override
         public Node<T> build() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return this;
         }
     }
@@ -2225,7 +2245,7 @@ final class Nodes {
 
         IntFixedNodeBuilder(long size) {
             super(size);
-            assert size < MAX_ARRAY_SIZE;
+//            assert size < MAX_ARRAY_SIZE;
         }
 
         @Override
@@ -2300,7 +2320,7 @@ final class Nodes {
 
         LongFixedNodeBuilder(long size) {
             super(size);
-            assert size < MAX_ARRAY_SIZE;
+//            assert size < MAX_ARRAY_SIZE;
         }
 
         @Override
@@ -2375,7 +2395,7 @@ final class Nodes {
 
         DoubleFixedNodeBuilder(long size) {
             super(size);
-            assert size < MAX_ARRAY_SIZE;
+//            assert size < MAX_ARRAY_SIZE;
         }
 
         @Override
@@ -2447,34 +2467,34 @@ final class Nodes {
     private static final class IntSpinedNodeBuilder
             extends SpinedBuffer.OfInt
             implements Node.OfInt, Node.Builder.OfInt {
-        private boolean building = false;
+//        private boolean building = false;
 
         IntSpinedNodeBuilder() {} // Avoid creation of special accessor
 
         @Override
         public Spliterator.OfInt getSpliterator() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.getSpliterator();
         }
 
         @Override
         public void forEach(IntConsumer consumer) {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.forEach(consumer);
         }
 
         //
         @Override
         public void begin(long size) {
-            assert !building : "was already building";
-            building = true;
+//            assert !building : "was already building";
+//            building = true;
             clear();
             ensureCapacity(size);
         }
 
         @Override
         public void accept(int i) {
-            assert building : "not building";
+//            assert building : "not building";
             super.accept(i);
         }
 
@@ -2485,8 +2505,8 @@ final class Nodes {
 
         @Override
         public void end() {
-            assert building : "was not building";
-            building = false;
+//            assert building : "was not building";
+//            building = false;
             // @@@ check begin(size) and size
         }
 
@@ -2508,7 +2528,7 @@ final class Nodes {
 
         @Override
         public void copyInto(int[] array, int offset) throws IndexOutOfBoundsException {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.copyInto(array, offset);
         }
 
@@ -2525,7 +2545,7 @@ final class Nodes {
 
         @Override
         public int[] asPrimitiveArray() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.asPrimitiveArray();
         }
 
@@ -2541,7 +2561,7 @@ final class Nodes {
 
         @Override
         public Node.OfInt build() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return this;
         }
 
@@ -2559,7 +2579,7 @@ final class Nodes {
     private static final class LongSpinedNodeBuilder
             extends SpinedBuffer.OfLong
             implements Node.OfLong, Node.Builder.OfLong {
-        private boolean building = false;
+//        private boolean building = false;
 
         LongSpinedNodeBuilder() {} // Avoid creation of special accessor
 
@@ -2571,28 +2591,28 @@ final class Nodes {
 
         @Override
         public Spliterator.OfLong getSpliterator() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.getSpliterator();
         }
 
         @Override
         public void forEach(LongConsumer consumer) {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.forEach(consumer);
         }
 
         //
         @Override
         public void begin(long size) {
-            assert !building : "was already building";
-            building = true;
+//            assert !building : "was already building";
+//            building = true;
             clear();
             ensureCapacity(size);
         }
 
         @Override
         public void accept(long i) {
-            assert building : "not building";
+//            assert building : "not building";
             super.accept(i);
         }
 
@@ -2603,8 +2623,8 @@ final class Nodes {
 
         @Override
         public void end() {
-            assert building : "was not building";
-            building = false;
+//            assert building : "was not building";
+//            building = false;
             // @@@ check begin(size) and size
         }
 
@@ -2626,7 +2646,7 @@ final class Nodes {
 
         @Override
         public void copyInto(long[] array, int offset) {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.copyInto(array, offset);
         }
 
@@ -2637,7 +2657,7 @@ final class Nodes {
 
         @Override
         public long[] asPrimitiveArray() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.asPrimitiveArray();
         }
 
@@ -2653,7 +2673,7 @@ final class Nodes {
 
         @Override
         public Node.OfLong build() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return this;
         }
 
@@ -2671,7 +2691,7 @@ final class Nodes {
     private static final class DoubleSpinedNodeBuilder
             extends SpinedBuffer.OfDouble
             implements Node.OfDouble, Node.Builder.OfDouble {
-        private boolean building = false;
+//        private boolean building = false;
 
         DoubleSpinedNodeBuilder() {} // Avoid creation of special accessor
 
@@ -2683,28 +2703,28 @@ final class Nodes {
 
         @Override
         public Spliterator.OfDouble getSpliterator() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.getSpliterator();
         }
 
         @Override
         public void forEach(DoubleConsumer consumer) {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.forEach(consumer);
         }
 
         //
         @Override
         public void begin(long size) {
-            assert !building : "was already building";
-            building = true;
+//            assert !building : "was already building";
+//            building = true;
             clear();
             ensureCapacity(size);
         }
 
         @Override
         public void accept(double i) {
-            assert building : "not building";
+//            assert building : "not building";
             super.accept(i);
         }
 
@@ -2715,8 +2735,8 @@ final class Nodes {
 
         @Override
         public void end() {
-            assert building : "was not building";
-            building = false;
+//            assert building : "was not building";
+//            building = false;
             // @@@ check begin(size) and size
         }
 
@@ -2738,7 +2758,7 @@ final class Nodes {
 
         @Override
         public void copyInto(double[] array, int offset) {
-            assert !building : "during building";
+//            assert !building : "during building";
             super.copyInto(array, offset);
         }
 
@@ -2749,7 +2769,7 @@ final class Nodes {
 
         @Override
         public double[] asPrimitiveArray() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return super.asPrimitiveArray();
         }
 
@@ -2760,7 +2780,7 @@ final class Nodes {
 
         @Override
         public Node.OfDouble build() {
-            assert !building : "during building";
+//            assert !building : "during building";
             return this;
         }
 
@@ -2799,7 +2819,7 @@ final class Nodes {
         SizedCollectorTask(Spliterator<P_IN> spliterator,
                            PipelineHelper<P_OUT> helper,
                            int arrayLength) {
-            assert spliterator.hasCharacteristics(Spliterator.SUBSIZED);
+//            assert spliterator.hasCharacteristics(Spliterator.SUBSIZED);
             this.spliterator = spliterator;
             this.helper = helper;
             this.targetSize = AbstractTask.suggestTargetSize(spliterator.estimateSize());
@@ -2810,7 +2830,7 @@ final class Nodes {
         SizedCollectorTask(K parent, Spliterator<P_IN> spliterator,
                            long offset, long length, int arrayLength) {
             super(parent);
-            assert spliterator.hasCharacteristics(Spliterator.SUBSIZED);
+//            assert spliterator.hasCharacteristics(Spliterator.SUBSIZED);
             this.spliterator = spliterator;
             this.helper = parent.helper;
             this.targetSize = parent.targetSize;
@@ -2838,7 +2858,7 @@ final class Nodes {
                                       task.length - leftSplitSize);
             }
 
-            assert task.offset + task.length < MAX_ARRAY_SIZE;
+//            assert task.offset + task.length < MAX_ARRAY_SIZE;
             @SuppressWarnings("unchecked")
 			T_SINK sink = (T_SINK) task;
             task.helper.wrapAndCopyInto(sink, rightSplit);

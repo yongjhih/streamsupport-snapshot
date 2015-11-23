@@ -1343,13 +1343,17 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Number of times to spin-wait before blocking. The spins (in
      * awaitRunStateLock and awaitWork) currently use randomized
-     * spins. If/when MWAIT-like intrinsics becomes available, they
-     * may allow quieter spinning. The value of SPINS must be a power
-     * of two, at least 4. The current value causes spinning for a
-     * small fraction of typical context-switch times, well worthwhile
-     * given the typical likelihoods that blocking is not necessary.
+     * spins. Currently set to zero to reduce CPU usage.
+     *
+     * If greater than zero the value of SPINS must be a power
+     * of two, at least 4.  A value of 2048 causes spinning for a
+     * small fraction of typical context-switch times.
+     *
+     * If/when MWAIT-like intrinsics becomes available, they
+     * may allow quieter spinning.
      */
-    private static final int SPINS  = 1 << 11;
+//    private static final int SPINS  = 1 << 11; // used in 8u40/8u45
+    private static final int SPINS  = 0; // JDK-8080768 (since 8u60)
 
     /**
      * Increment for seed generators. See class ThreadLocal for
@@ -2434,12 +2438,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 int j = ((am & s) << ASHIFT) + ABASE;
                 U.putOrderedObject(a, j, task);
                 U.putOrderedInt(q, QTOP, s + 1);
-
-                // SZ : 2015-04-23
-                // Hotfix for ticket #58 (JDK-8078490) bug
-//                U.putOrderedInt(q, QLOCK, 0); // TODO
-                U.putIntVolatile(q, QLOCK, 0); // TODO
-
+                U.putIntVolatile(q, QLOCK, 0);
                 if (n <= 1)
                     signalWork(ws, q);
                 return;

@@ -77,7 +77,7 @@ final class SliceOps {
     private static <P_IN> Spliterator<P_IN> sliceSpliterator(StreamShape shape,
                                                              Spliterator<P_IN> s,
                                                              long skip, long limit) {
-        assert s.hasCharacteristics(Spliterator.SUBSIZED);
+//        assert s.hasCharacteristics(Spliterator.SUBSIZED);
         long sliceFence = calcSliceFence(skip, limit);
         switch (shape) {
             case REFERENCE:
@@ -97,14 +97,9 @@ final class SliceOps {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> IntFunction<T[]> castingArray() {
-        return size -> (T[]) new Object[size];
-    }
-
     /**
      * Appends a "slice" operation to the provided stream.  The slice operation
-     * may be may be skip-only, limit-only, or skip-and-limit.
+     * may be skip-only, limit-only, or skip-and-limit.
      *
      * @param <T> the type of both input and output elements
      * @param upstream a reference stream with element type T
@@ -152,7 +147,7 @@ final class SliceOps {
                     //     cancellation will be more aggressive cancelling later tasks
                     //     if the target slice size has been reached from a given task,
                     //     cancellation should also clear local results if any
-                    return new SliceTask<>(this, helper, spliterator, castingArray(), skip, limit).
+                    return new SliceTask<>(this, helper, spliterator, Nodes.castingArray(), skip, limit).
                             invoke().spliterator();
                 }
             }
