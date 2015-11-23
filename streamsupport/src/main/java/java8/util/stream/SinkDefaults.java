@@ -26,40 +26,40 @@ package java8.util.stream;
 
 final class SinkDefaults {
 
-	static final class OfInt {
+    static final class OfInt {
 
         static void accept(Sink.OfInt this_, Integer i) {
             this_.accept(i.intValue());
         }
 
-		private OfInt() {
-			throw new AssertionError();
-		}
-	}
+        private OfInt() {
+            throw new AssertionError();
+        }
+    }
 
-	static final class OfLong {
+    static final class OfLong {
 
         static void accept(Sink.OfLong this_, Long i) {
             this_.accept(i.longValue());
         }
 
-		private OfLong() {
-			throw new AssertionError();
-		}
-	}
+        private OfLong() {
+            throw new AssertionError();
+        }
+    }
 
-	static final class OfDouble {
+    static final class OfDouble {
 
         static void accept(Sink.OfDouble this_, Double i) {
             this_.accept(i.doubleValue());
         }
 
-		private OfDouble() {
-			throw new AssertionError();
-		}
-	}
+        private OfDouble() {
+            throw new AssertionError();
+        }
+    }
 
-	/**
+    /**
      * Resets the sink state to receive a fresh data set.  This must be called
      * before sending any data to the sink.  After calling {@link #end()},
      * you may call this method to reset the sink for another calculation.
@@ -69,7 +69,7 @@ final class SinkDefaults {
      * <p>Prior to this call, the sink must be in the initial state, and after
      * this call it is in the active state.
      */
-    static <T> void begin(Sink<T> this_, long size) {}
+//    static <T> void begin(Sink<T> this_, long size) {}
 
     /**
      * Indicates that all elements have been pushed.  If the {@code Sink} is
@@ -79,7 +79,7 @@ final class SinkDefaults {
      * <p>Prior to this call, the sink must be in the active state, and after
      * this call it is returned to the initial state.
      */
-    static <T> void end(Sink<T> this_) {}
+//    static <T> void end(Sink<T> this_) {}
 
     /**
      * Indicates that this {@code Sink} does not wish to receive any more data.
@@ -88,9 +88,9 @@ final class SinkDefaults {
      *
      * @return true if cancellation is requested
      */
-    static <T> boolean cancellationRequested(Sink<T> this_) {
-        return false;
-    }
+//    static <T> boolean cancellationRequested(Sink<T> this_) {
+//        return false;
+//    }
 
     /**
      * Accepts an int value.
@@ -125,7 +125,7 @@ final class SinkDefaults {
         throw new IllegalStateException("called wrong accept method");
     }
 
-	private SinkDefaults() {
-		throw new AssertionError();
-	}
+    private SinkDefaults() {
+        throw new AssertionError();
+    }
 }

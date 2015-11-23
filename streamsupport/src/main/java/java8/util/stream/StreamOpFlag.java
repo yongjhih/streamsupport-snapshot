@@ -257,7 +257,7 @@ enum StreamOpFlag {
      * A stream can have this value or an intermediate operation can preserve,
      * clear or inject this value.
      * <p>
-     * Note: The {@link java.util.Spliterator#SORTED} characteristic can define
+     * Note: The {@link java8.util.Spliterator#SORTED} characteristic can define
      * a sort order with an associated non-null comparator.  Augmenting flag
      * state with addition properties such that those properties can be passed
      * to operations requires some disruptive changes for a singular use-case.
@@ -412,18 +412,18 @@ enum StreamOpFlag {
         }
 
         Map<Type, Integer> build() {
-        	if (map instanceof ConcurrentMap) {
-        		ConcurrentMap<Type, Integer> concMap = (ConcurrentMap<Type, Integer>) map;
-	            for (Type t : Type.values()) {
-	            	concMap.putIfAbsent(t, 0);
-	            }
-	            return concMap;
-        	} else {
-	            for (Type t : Type.values()) {
-	            	Maps.putIfAbsent(map, t, 0);
-	            }
-	            return map;
-        	}
+            if (map instanceof ConcurrentMap) {
+                ConcurrentMap<Type, Integer> concMap = (ConcurrentMap<Type, Integer>) map;
+                for (Type t : Type.values()) {
+                    concMap.putIfAbsent(t, 0);
+                }
+                return concMap;
+            } else {
+                for (Type t : Type.values()) {
+                    Maps.putIfAbsent(map, t, 0);
+                }
+                return map;
+            }
         }
     }
 

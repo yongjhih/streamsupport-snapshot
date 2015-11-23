@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> V putIfAbsent(Map<K, V> map, K key, V value) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         V v = map.get(key);
         if (v == null) {
             v = map.put(key, value);
@@ -109,9 +109,11 @@ public final class Maps {
      * map.merge(key, msg, String::concat)
      * }</pre>
      *
-     * <p>If the function returns {@code null} the mapping is removed.  If the
-     * function itself throws an (unchecked) exception, the exception is
-     * rethrown, and the current mapping is left unchanged.
+     * <p>If the remapping function returns {@code null} the mapping is removed.
+     * If the remapping function itself throws an (unchecked) exception, the
+     * exception is rethrown, and the current mapping is left unchanged.
+     *
+     * <p>The remapping function itself should not modify the passed map during computation.
      *
      * <p><b>Implementation Requirements:</b><br>
      * The default implementation is equivalent to performing the following
@@ -137,6 +139,13 @@ public final class Maps {
      * absent. Implementations which support null values <strong>must</strong>
      * override the default implementation.
      *
+     * <p>The default implementation makes no guarantees about detecting if the
+     * remapping function modifies the passed map during computation and, if
+     * appropriate, reporting an error. Concurrent implementations should override
+     * this method and, on a best-effort basis, throw an {@code IllegalStateException}
+     * if it is detected that the remapping function modifies the map during computation
+     * and as a result computation would never complete.
+     *
      * @param <K> the type of keys maintained by the passed map
      * @param <V> the type of mapped values in the passed map
      * @param map the {@code Map} on which to execute the {@code mergeConcurrent} operation.
@@ -160,7 +169,7 @@ public final class Maps {
      */
     public static <K, V> V mergeConcurrent(ConcurrentMap<K, V> map, K key, V value,
             BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(remappingFunction);
         Objects.requireNonNull(value);
         V oldValue = map.get(key);
@@ -188,8 +197,8 @@ public final class Maps {
      * to {@code null}), attempts to compute its value using the given mapping
      * function and enters it into the passed {@code map} unless {@code null}.
      *
-     * <p>If the function returns {@code null} no mapping is recorded. If
-     * the function itself throws an (unchecked) exception, the
+     * <p>If the mapping function returns {@code null} no mapping is recorded.
+     * If the mapping function itself throws an (unchecked) exception, the
      * exception is rethrown, and no mapping is recorded.  The most
      * common usage is to construct a new object serving as an initial
      * mapped value or memoized result, as in:
@@ -205,6 +214,7 @@ public final class Maps {
      * map.computeIfAbsent(key, k -> new HashSet<V>()).add(v);
      * }</pre>
      *
+     * <p>The mapping function itself should not modify the passed map during computation.
      *
      * <p><b>Implementation Requirements:</b><br>
      * The default implementation is equivalent to the following steps for the
@@ -228,11 +238,18 @@ public final class Maps {
      * absent. Implementations which support null values <strong>must</strong>
      * override the default implementation.
      *
+     * <p>The default implementation makes no guarantees about detecting if the
+     * mapping function modifies the passed map during computation and, if
+     * appropriate, reporting an error. Concurrent implementations should override
+     * this method and, on a best-effort basis, throw an {@code IllegalStateException}
+     * if it is detected that the mapping function modifies the map during computation
+     * and as a result computation would never complete.
+     *
      * @param <K> the type of keys maintained by the passed map
      * @param <V> the type of mapped values in the passed map
      * @param map the {@code Map} on which to execute the {@code computeIfAbsentConcurrent} operation.
      * @param key key with which the specified value is to be associated
-     * @param mappingFunction the function to compute a value
+     * @param mappingFunction the mapping function to compute a value
      * @return the current (existing or computed) value associated with
      *         the specified key, or null if the computed value is null
      * @throws NullPointerException if the specified key is null and
@@ -248,7 +265,7 @@ public final class Maps {
      */
     public static <K, V> V computeIfAbsentConcurrent(ConcurrentMap<K, V> map, K key,
             Function<? super K, ? extends V> mappingFunction) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(mappingFunction);
         V v, newValue;
         return ((v = map.get(key)) == null &&
@@ -306,7 +323,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> void replaceAllConcurrent(ConcurrentMap<K, V> map, BiFunction<? super K, ? super V, ? extends V> function) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(function);
         forEachConcurrent(map, (k,v) -> {
             while (!map.replace(k, v, function.apply(k, v))) {
@@ -344,7 +361,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> V getOrDefaultConcurrent(ConcurrentMap<K, V> map, Object key, V defaultValue) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         V v;
         return ((v = map.get(key)) != null) ? v : defaultValue;
     }
@@ -375,7 +392,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> V getOrDefault(Map<K, V> map, Object key, V defaultValue) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         V v;
         return (((v = map.get(key)) != null) || map.containsKey(key))
             ? v
@@ -411,7 +428,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> void forEachConcurrent(ConcurrentMap<K, V> map, BiConsumer<? super K, ? super V> action) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(action);
         for (Map.Entry<K, V> entry : map.entrySet()) {
             K k;
@@ -456,7 +473,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> void forEach(Map<K, V> map, BiConsumer<? super K, ? super V> action) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(action);
         for (Map.Entry<K, V> entry : map.entrySet()) {
             K k;
@@ -485,9 +502,11 @@ public final class Maps {
      * map.merge(key, msg, String::concat)
      * }</pre>
      *
-     * <p>If the function returns {@code null} the mapping is removed.  If the
-     * function itself throws an (unchecked) exception, the exception is
-     * rethrown, and the current mapping is left unchanged.
+     * <p>If the remapping function returns {@code null} the mapping is removed.
+     * If the remapping function itself throws an (unchecked) exception, the
+     * exception is rethrown, and the current mapping is left unchanged.
+     *
+     * <p>The remapping function itself should not modify the passed map during computation.
      *
      * <p><b>Implementation Requirements:</b><br>
      * The default implementation is equivalent to performing the following
@@ -504,13 +523,24 @@ public final class Maps {
      *     map.put(key, newValue);
      * }</pre>
      *
+     * <p>The default implementation makes no guarantees about detecting if the
+     * remapping function modifies the passed map during computation and, if
+     * appropriate, reporting an error. Non-concurrent implementations should
+     * override this method and, on a best-effort basis, throw a
+     * {@code ConcurrentModificationException} if it is detected that the
+     * remapping function modifies the map during computation. Concurrent
+     * implementations should override this method and, on a best-effort basis,
+     * throw an {@code IllegalStateException} if it is detected that the
+     * remapping function modifies the map during computation and as a result
+     * computation would never complete.
+     *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
      * atomicity guarantees must override this method and document its
      * concurrency properties. In particular, all implementations of
      * subinterface {@link java.util.concurrent.ConcurrentMap} must document
-     * whether the function is applied once atomically only if the value is not
-     * present.
+     * whether the remapping function is applied once atomically only if the
+     * value is not present.
      *
      * @param <K> the type of keys maintained by the passed map
      * @param <V> the type of mapped values in the passed map
@@ -519,7 +549,7 @@ public final class Maps {
      * @param value the non-null value to be merged with the existing value
      *        associated with the key or, if no existing value or a null value
      *        is associated with the key, to be associated with the key
-     * @param remappingFunction the function to recompute a value if present
+     * @param remappingFunction the remapping function to recompute a value if present
      * @return the new value associated with the specified key, or null if no
      *         value is associated with the key
      * @throws UnsupportedOperationException if the {@code put} operation
@@ -535,16 +565,16 @@ public final class Maps {
      */
     public static <K, V> V merge(Map<K, V> map, K key, V value,
             BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(remappingFunction);
         Objects.requireNonNull(value);
         V oldValue = map.get(key);
         V newValue = (oldValue == null) ? value :
                    remappingFunction.apply(oldValue, value);
         if (newValue == null) {
-        	map.remove(key);
+            map.remove(key);
         } else {
-        	map.put(key, newValue);
+            map.put(key, newValue);
         }
         return newValue;
     }
@@ -554,8 +584,8 @@ public final class Maps {
      * to {@code null}), attempts to compute its value using the given mapping
      * function and enters it into the passed {@code map} unless {@code null}.
      *
-     * <p>If the function returns {@code null} no mapping is recorded. If
-     * the function itself throws an (unchecked) exception, the
+     * <p>If the mapping function returns {@code null} no mapping is recorded.
+     * If the mapping function itself throws an (unchecked) exception, the
      * exception is rethrown, and no mapping is recorded.  The most
      * common usage is to construct a new object serving as an initial
      * mapped value or memoized result, as in:
@@ -571,6 +601,7 @@ public final class Maps {
      * map.computeIfAbsent(key, k -> new HashSet<V>()).add(v);
      * }</pre>
      *
+     * <p>The mapping function itself should not modify the passed map during computation.
      *
      * <p><b>Implementation Requirements:</b><br>
      * The default implementation is equivalent to the following steps for the
@@ -585,19 +616,30 @@ public final class Maps {
      * }
      * }</pre>
      *
+     * <p>The default implementation makes no guarantees about detecting if the
+     * mapping function modifies the passed map during computation and, if
+     * appropriate, reporting an error. Non-concurrent implementations should
+     * override this method and, on a best-effort basis, throw a
+     * {@code ConcurrentModificationException} if it is detected that the
+     * mapping function modifies the map during computation. Concurrent
+     * implementations should override this method and, on a best-effort basis,
+     * throw an {@code IllegalStateException} if it is detected that the
+     * mapping function modifies the map during computation and as a result
+     * computation would never complete.
+     *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
      * atomicity guarantees must override this method and document its
      * concurrency properties. In particular, all implementations of
      * subinterface {@link java.util.concurrent.ConcurrentMap} must document
-     * whether the function is applied once atomically only if the value is not
-     * present.
+     * whether the mapping function is applied once atomically only if the value
+     * is not present.
      *
      * @param <K> the type of keys maintained by the passed map
      * @param <V> the type of mapped values in the passed map
      * @param map the {@code Map} on which to execute the {@code computeIfAbsent} operation.
      * @param key key with which the specified value is to be associated
-     * @param mappingFunction the function to compute a value
+     * @param mappingFunction the mapping function to compute a value
      * @return the current (existing or computed) value associated with
      *         the specified key, or null if the computed value is null
      * @throws NullPointerException if the specified key is null and
@@ -613,13 +655,13 @@ public final class Maps {
      */
     public static <K, V> V computeIfAbsent(Map<K, V> map, K key,
             Function<? super K, ? extends V> mappingFunction) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(mappingFunction);
         V v;
         if ((v = map.get(key)) == null) {
             V newValue;
             if ((newValue = mappingFunction.apply(key)) != null) {
-            	map.put(key, newValue);
+                map.put(key, newValue);
                 return newValue;
             }
         }
@@ -672,7 +714,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> boolean replace(Map<K, V> map, K key, V oldValue, V newValue) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Object curValue = map.get(key);
         if (!Objects.equals(curValue, oldValue) ||
             (curValue == null && !map.containsKey(key))) {
@@ -724,7 +766,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> V replace(Map<K, V> map, K key, V value) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         V curValue;
         if (((curValue = map.get(key)) != null) || map.containsKey(key)) {
             curValue = map.put(key, value);
@@ -775,7 +817,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> void replaceAll(Map<K, V> map, BiFunction<? super K, ? super V, ? extends V> function) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(function);
         for (Map.Entry<K, V> entry : map.entrySet()) {
             K k;
@@ -785,8 +827,8 @@ public final class Maps {
                 v = entry.getValue();
             } catch (IllegalStateException ise) {
                 // this usually means the entry is no longer in the map.
-            	ConcurrentModificationException cmex = new ConcurrentModificationException();
-            	cmex.initCause(ise);
+                ConcurrentModificationException cmex = new ConcurrentModificationException();
+                cmex.initCause(ise);
                 throw cmex;
             }
 
@@ -797,8 +839,8 @@ public final class Maps {
                 entry.setValue(v);
             } catch (IllegalStateException ise) {
                 // this usually means the entry is no longer in the map.
-            	ConcurrentModificationException cmex = new ConcurrentModificationException();
-            	cmex.initCause(ise);
+                ConcurrentModificationException cmex = new ConcurrentModificationException();
+                cmex.initCause(ise);
                 throw cmex;
             }
         }
@@ -814,10 +856,12 @@ public final class Maps {
      * map.compute(key, (k, v) -> (v == null) ? msg : v.concat(msg))}</pre>
      * (Method {@link #merge merge()} is often simpler to use for such purposes.)
      *
-     * <p>If the function returns {@code null}, the mapping is removed (or
-     * remains absent if initially absent).  If the function itself throws an
-     * (unchecked) exception, the exception is rethrown, and the current mapping
-     * is left unchanged.
+     * <p>If the remapping function returns {@code null}, the mapping is removed
+     * (or remains absent if initially absent).  If the remapping function itself
+     * throws an (unchecked) exception, the exception is rethrown, and the current
+     * mapping is left unchanged.
+     *
+     * <p>The remapping function itself should not modify the passed map during computation.
      *
      * <p><b>Implementation Requirements:</b><br>
      * The default implementation is equivalent to performing the following
@@ -840,19 +884,30 @@ public final class Maps {
      * }
      * }</pre>
      *
+     * <p>The default implementation makes no guarantees about detecting if the
+     * remapping function modifies the passed map during computation and, if
+     * appropriate, reporting an error. Non-concurrent implementations should
+     * override this method and, on a best-effort basis, throw a
+     * {@code ConcurrentModificationException} if it is detected that the
+     * remapping function modifies the map during computation. Concurrent
+     * implementations should override this method and, on a best-effort basis,
+     * throw an {@code IllegalStateException} if it is detected that the
+     * remapping function modifies the map during computation and as a result
+     * computation would never complete.
+     *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
      * atomicity guarantees must override this method and document its
      * concurrency properties. In particular, all implementations of
      * subinterface {@link java.util.concurrent.ConcurrentMap} must document
-     * whether the function is applied once atomically only if the value is not
-     * present.
+     * whether the remapping function is applied once atomically only if the
+     * value is not present.
      *
      * @param <K> the type of keys maintained by the passed map
      * @param <V> the type of mapped values in the passed map
      * @param map the {@code Map} on which to execute the {@code compute} operation.
      * @param key key with which the specified value is to be associated
-     * @param remappingFunction the function to compute a value
+     * @param remappingFunction the remapping function to compute a value
      * @return the new value associated with the specified key, or null if none
      * @throws NullPointerException if the specified key is null and
      *         the map does not support null keys, or the
@@ -867,7 +922,7 @@ public final class Maps {
      */
     public static <K, V> V compute(Map<K, V> map, K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(remappingFunction);
         V oldValue = map.get(key);
 
@@ -893,10 +948,12 @@ public final class Maps {
      * If the value for the specified key is present and non-null, attempts to
      * compute a new mapping given the key and its current mapped value.
      *
-     * <p>If the function returns {@code null}, the mapping is removed.  If the
-     * function itself throws an (unchecked) exception, the exception is
-     * rethrown, and the current mapping is left unchanged.
-     * 
+     * <p>If the remapping function returns {@code null}, the mapping is removed.
+     * If the remapping function itself throws an (unchecked) exception, the
+     * exception is rethrown, and the current mapping is left unchanged.
+     *
+     * <p>The remapping function itself should not modify the passed map during computation.
+     *
      * <p><b>Implementation Requirements:</b><br>
      * The default implementation is equivalent to performing the following
      * steps for the {@code map}, then returning the current value or
@@ -913,19 +970,30 @@ public final class Maps {
      * }
      * }</pre>
      *
+     * <p>The default implementation makes no guarantees about detecting if the
+     * remapping function modifies the passed map during computation and, if
+     * appropriate, reporting an error. Non-concurrent implementations should
+     * override this method and, on a best-effort basis, throw a
+     * {@code ConcurrentModificationException} if it is detected that the
+     * remapping function modifies the map during computation. Concurrent
+     * implementations should override this method and, on a best-effort basis,
+     * throw an {@code IllegalStateException} if it is detected that the
+     * remapping function modifies the map during computation and as a result
+     * computation would never complete.
+     *
      * <p>The default implementation makes no guarantees about synchronization
      * or atomicity properties of this method. Any implementation providing
      * atomicity guarantees must override this method and document its
      * concurrency properties. In particular, all implementations of
      * subinterface {@link java.util.concurrent.ConcurrentMap} must document
-     * whether the function is applied once atomically only if the value is not
-     * present.
+     * whether the remapping function is applied once atomically only if the
+     * value is not present.
      *
      * @param <K> the type of keys maintained by the passed map
      * @param <V> the type of mapped values in the passed map
      * @param map the {@code Map} on which to execute the {@code computeIfPresent} operation.
      * @param key key with which the specified value is to be associated
-     * @param remappingFunction the function to compute a value
+     * @param remappingFunction the remapping function to compute a value
      * @return the new value associated with the specified key, or null if none
      * @throws NullPointerException if the specified key is null and
      *         the map does not support null keys, or the
@@ -940,7 +1008,7 @@ public final class Maps {
      */
     public static <K, V> V computeIfPresent(Map<K, V> map, K key,
             BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Objects.requireNonNull(remappingFunction);
         V oldValue;
         if ((oldValue = map.get(key)) != null) {
@@ -995,7 +1063,7 @@ public final class Maps {
      * @since 1.8
      */
     public static <K, V> boolean remove(Map<K, V> map, Object key, Object value) {
-    	Objects.requireNonNull(map);
+        Objects.requireNonNull(map);
         Object curValue = map.get(key);
         if (!Objects.equals(curValue, value) ||
             (curValue == null && !map.containsKey(key))) {
@@ -1005,110 +1073,110 @@ public final class Maps {
         return true;
     }
 
-	/**
-	 * A place for the static interface methods of the Java 8 {@link Map.Entry}
-	 * interface.
-	 */
-	public static final class Entry {
-		/**
-		 * Returns a comparator that compares {@link Map.Entry} in natural order
-		 * on key.
-		 *
-		 * <p>
-		 * The returned comparator is serializable and throws
-		 * {@link NullPointerException} when comparing an entry with a null key.
-		 *
-		 * @param <K>
-		 *            the {@link Comparable} type of then map keys
-		 * @param <V>
-		 *            the type of the map values
-		 * @return a comparator that compares {@link Map.Entry} in natural order
-		 *         on key.
-		 * @see Comparable
-		 * @since 1.8
-		 */
-		public static <K extends Comparable<? super K>, V> Comparator<Map.Entry<K, V>> comparingByKey() {
-			return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> c1
-					.getKey().compareTo(c2.getKey());
-		}
+    /**
+     * A place for the static interface methods of the Java 8 {@link Map.Entry}
+     * interface.
+     */
+    public static final class Entry {
+        /**
+         * Returns a comparator that compares {@link Map.Entry} in natural order
+         * on key.
+         *
+         * <p>
+         * The returned comparator is serializable and throws
+         * {@link NullPointerException} when comparing an entry with a null key.
+         *
+         * @param <K>
+         *            the {@link Comparable} type of then map keys
+         * @param <V>
+         *            the type of the map values
+         * @return a comparator that compares {@link Map.Entry} in natural order
+         *         on key.
+         * @see Comparable
+         * @since 1.8
+         */
+        public static <K extends Comparable<? super K>, V> Comparator<Map.Entry<K, V>> comparingByKey() {
+            return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> c1
+                    .getKey().compareTo(c2.getKey());
+        }
 
-		/**
-		 * Returns a comparator that compares {@link Map.Entry} in natural order
-		 * on value.
-		 *
-		 * <p>
-		 * The returned comparator is serializable and throws
-		 * {@link NullPointerException} when comparing an entry with null
-		 * values.
-		 *
-		 * @param <K>
-		 *            the type of the map keys
-		 * @param <V>
-		 *            the {@link Comparable} type of the map values
-		 * @return a comparator that compares {@link Map.Entry} in natural order
-		 *         on value.
-		 * @see Comparable
-		 * @since 1.8
-		 */
-		public static <K, V extends Comparable<? super V>> Comparator<Map.Entry<K, V>> comparingByValue() {
-			return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> c1
-					.getValue().compareTo(c2.getValue());
-		}
+        /**
+         * Returns a comparator that compares {@link Map.Entry} in natural order
+         * on value.
+         *
+         * <p>
+         * The returned comparator is serializable and throws
+         * {@link NullPointerException} when comparing an entry with null
+         * values.
+         *
+         * @param <K>
+         *            the type of the map keys
+         * @param <V>
+         *            the {@link Comparable} type of the map values
+         * @return a comparator that compares {@link Map.Entry} in natural order
+         *         on value.
+         * @see Comparable
+         * @since 1.8
+         */
+        public static <K, V extends Comparable<? super V>> Comparator<Map.Entry<K, V>> comparingByValue() {
+            return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> c1
+                    .getValue().compareTo(c2.getValue());
+        }
 
-		/**
-		 * Returns a comparator that compares {@link Map.Entry} by key using the
-		 * given {@link Comparator}.
-		 *
-		 * <p>
-		 * The returned comparator is serializable if the specified comparator
-		 * is also serializable.
-		 *
-		 * @param <K>
-		 *            the type of the map keys
-		 * @param <V>
-		 *            the type of the map values
-		 * @param cmp
-		 *            the key {@link Comparator}
-		 * @return a comparator that compares {@link Map.Entry} by the key.
-		 * @since 1.8
-		 */
-		public static <K, V> Comparator<Map.Entry<K, V>> comparingByKey(
-				Comparator<? super K> cmp) {
-			Objects.requireNonNull(cmp);
-			return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> cmp
-					.compare(c1.getKey(), c2.getKey());
-		}
+        /**
+         * Returns a comparator that compares {@link Map.Entry} by key using the
+         * given {@link Comparator}.
+         *
+         * <p>
+         * The returned comparator is serializable if the specified comparator
+         * is also serializable.
+         *
+         * @param <K>
+         *            the type of the map keys
+         * @param <V>
+         *            the type of the map values
+         * @param cmp
+         *            the key {@link Comparator}
+         * @return a comparator that compares {@link Map.Entry} by the key.
+         * @since 1.8
+         */
+        public static <K, V> Comparator<Map.Entry<K, V>> comparingByKey(
+                Comparator<? super K> cmp) {
+            Objects.requireNonNull(cmp);
+            return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> cmp
+                    .compare(c1.getKey(), c2.getKey());
+        }
 
-		/**
-		 * Returns a comparator that compares {@link Map.Entry} by value using
-		 * the given {@link Comparator}.
-		 *
-		 * <p>
-		 * The returned comparator is serializable if the specified comparator
-		 * is also serializable.
-		 *
-		 * @param <K>
-		 *            the type of the map keys
-		 * @param <V>
-		 *            the type of the map values
-		 * @param cmp
-		 *            the value {@link Comparator}
-		 * @return a comparator that compares {@link Map.Entry} by the value.
-		 * @since 1.8
-		 */
-		public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(
-				Comparator<? super V> cmp) {
-			Objects.requireNonNull(cmp);
-			return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> cmp
-					.compare(c1.getValue(), c2.getValue());
-		}
+        /**
+         * Returns a comparator that compares {@link Map.Entry} by value using
+         * the given {@link Comparator}.
+         *
+         * <p>
+         * The returned comparator is serializable if the specified comparator
+         * is also serializable.
+         *
+         * @param <K>
+         *            the type of the map keys
+         * @param <V>
+         *            the type of the map values
+         * @param cmp
+         *            the value {@link Comparator}
+         * @return a comparator that compares {@link Map.Entry} by the value.
+         * @since 1.8
+         */
+        public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(
+                Comparator<? super V> cmp) {
+            Objects.requireNonNull(cmp);
+            return (Comparator<Map.Entry<K, V>> & Serializable) (c1, c2) -> cmp
+                    .compare(c1.getValue(), c2.getValue());
+        }
 
-		private Entry() {
-			throw new AssertionError();
-		}
-	}
+        private Entry() {
+            throw new AssertionError();
+        }
+    }
 
     private Maps() {
-    	throw new AssertionError();
+        throw new AssertionError();
     }
 }
