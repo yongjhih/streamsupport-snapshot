@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
@@ -70,6 +71,10 @@ public final class Spliterators {
 	static final boolean NATIVE_SPECIALIZATION = getBooleanPropertyValue(NATIVE_OPT_ENABLED_PROP);
 	// defaults to true
 	static final boolean JRE8_DELEGATION = getBooleanPropertyValue(JRE8_DELEGATION_ENABLED_PROP);
+	// defaults to false
+	static final boolean IS_ANDROID = isAndroid();
+	// defaults to false
+	static final boolean IS_JAVA6 = isJava6();
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Spliterators() {}
@@ -838,6 +843,7 @@ public final class Spliterators {
 	 * <li>java.util.Arrays.ArrayList</li>
 	 * <li>java.util.ArrayDeque</li>
 	 * <li>java.util.Vector</li>
+	 * <li>java.util.LinkedList</li>
 	 * <li>java.util.LinkedHashSet</li>
 	 * <li>java.util.PriorityQueue</li>
 	 * <li>java.util.concurrent.ArrayBlockingQueue</li>
@@ -883,20 +889,23 @@ public final class Spliterators {
     }
 
     private static <T> Spliterator<T> listSpliterator(List<? extends T> c) {
-		if (NATIVE_SPECIALIZATION && c instanceof ArrayList) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof ArrayList) {
 			return ArrayListSpliterator.spliterator((ArrayList<T>) c);
 		}
 
 		String className = c.getClass().getName();
-		if (NATIVE_SPECIALIZATION && "java.util.Arrays$ArrayList".equals(className)) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && "java.util.Arrays$ArrayList".equals(className)) {
 			return ArraysArrayListSpliterator.spliterator((List<T>) c);
 		}
 
-		if (NATIVE_SPECIALIZATION && c instanceof CopyOnWriteArrayList) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof CopyOnWriteArrayList) {
 			return CopyOnWriteArrayListSpliterator
 					.spliterator((CopyOnWriteArrayList<T>) c);
 		}
-		if (NATIVE_SPECIALIZATION && c instanceof Vector) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof LinkedList) {
+			return LinkedListSpliterator.spliterator((LinkedList<T>) c);
+		}
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof Vector) {
 			return VectorSpliterator.spliterator((Vector<T>) c);
 		}
 
@@ -919,7 +928,7 @@ public final class Spliterators {
 			};
 		}
 
-		if (NATIVE_SPECIALIZATION && c instanceof CopyOnWriteArraySet) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof CopyOnWriteArraySet) {
 			return CopyOnWriteArraySetSpliterator
 					.spliterator((CopyOnWriteArraySet<T>) c);
 		}
@@ -933,19 +942,19 @@ public final class Spliterators {
 			return spliterator(c, Spliterator.ORDERED | Spliterator.NONNULL
 					| Spliterator.CONCURRENT);
 		}
-		if (NATIVE_SPECIALIZATION && c instanceof LinkedBlockingQueue) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof LinkedBlockingQueue) {
 			return LBQSpliterator.spliterator((LinkedBlockingQueue<T>) c);
 		}
-		if (NATIVE_SPECIALIZATION && c instanceof ArrayDeque) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof ArrayDeque) {
 			return ArrayDequeSpliterator.spliterator((ArrayDeque<T>) c);
 		}
-		if (NATIVE_SPECIALIZATION && c instanceof LinkedBlockingDeque) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof LinkedBlockingDeque) {
 			return LBDSpliterator.spliterator((LinkedBlockingDeque<T>) c);
 		}
-		if (NATIVE_SPECIALIZATION && c instanceof PriorityBlockingQueue) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof PriorityBlockingQueue) {
 			return PriorityBlockingQueueSpliterator.spliterator((PriorityBlockingQueue<T>) c);
 		}
-		if (NATIVE_SPECIALIZATION && c instanceof PriorityQueue) {
+		if ((NATIVE_SPECIALIZATION || IS_ANDROID) && c instanceof PriorityQueue) {
 			return PriorityQueueSpliterator.spliterator((PriorityQueue<T>) c);
 		}
 
@@ -2979,4 +2988,30 @@ public final class Spliterators {
 			}
 		});
     }
+
+    /**
+     * Are we running on a Dalvik VM or maybe even ART?
+     */
+    private static boolean isAndroid() {
+    	Class<?> clazz = null;
+    	try {
+    		clazz = Class.forName("android.util.DisplayMetrics");
+    	} catch (Throwable notPresent) {
+    		// ignore
+    	}
+    	return clazz != null;
+    }
+
+    /**
+     * Are we running on a Java 6 JRE?
+     */
+	private static boolean isJava6() {
+		String classVersion = System.getProperty("java.class.version");
+		if (classVersion != null && classVersion.length() >= 2) {
+			if (classVersion.startsWith("50")) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

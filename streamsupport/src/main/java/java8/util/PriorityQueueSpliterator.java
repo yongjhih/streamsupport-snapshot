@@ -42,7 +42,7 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
     private int expectedModCount; // initialized when fence set
 
     /** Creates new spliterator covering the given range */
-    PriorityQueueSpliterator(PriorityQueue<E> pq, int origin, int fence,
+    private PriorityQueueSpliterator(PriorityQueue<E> pq, int origin, int fence,
                          int expectedModCount) {
         this.pq = pq;
         this.index = origin;
@@ -74,11 +74,10 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
 	@Override
     @SuppressWarnings("unchecked")
     public void forEachRemaining(Consumer<? super E> action) {
+		Objects.requireNonNull(action);
         int i, hi, mc; // hoist accesses and checks from loop
-        PriorityQueue<E> q; Object[] a;
-        if (action == null) {
-            throw new NullPointerException();
-        }
+        PriorityQueue<E> q;
+        Object[] a;
         if ((q = pq) != null && (a = getQueue(q)) != null) {
             if ((hi = fence) < 0) {
                 mc = getModCount(q);
@@ -106,9 +105,7 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
 
 	@Override
     public boolean tryAdvance(Consumer<? super E> action) {
-        if (action == null) {
-            throw new NullPointerException();
-        }
+		Objects.requireNonNull(action);
         int hi = getFence(), lo = index;
         if (lo >= 0 && lo < hi) {
             index = lo + 1;
@@ -155,6 +152,9 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
 	}
 
 	private static <T> int getModCount(PriorityQueue<T> pq) {
+		if (IS_ANDROID) {
+			return 0;
+		}
 		return UNSAFE.getInt(pq, MODCOUNT_OFF);
 	}
 
@@ -167,14 +167,22 @@ final class PriorityQueueSpliterator<E> implements Spliterator<E> {
 	private static final long SIZE_OFF;
 	private static final long MODCOUNT_OFF;
 	private static final long QUEUE_OFF;
+	private static final boolean IS_ANDROID;
 	static {
 		try {
+			IS_ANDROID = Spliterators.IS_ANDROID;
 			UNSAFE = UnsafeAccess.unsafe;
 			Class<?> pq = PriorityQueue.class;
 			SIZE_OFF = UNSAFE.objectFieldOffset(pq.getDeclaredField("size"));
-			MODCOUNT_OFF = UNSAFE.objectFieldOffset(pq
-					.getDeclaredField("modCount"));
-			QUEUE_OFF = UNSAFE.objectFieldOffset(pq.getDeclaredField("queue"));
+			if (!IS_ANDROID) {
+				MODCOUNT_OFF = UNSAFE.objectFieldOffset(pq
+						.getDeclaredField("modCount"));
+			} else {
+				MODCOUNT_OFF = 0L; // unused
+			}
+			String queueFieldName = IS_ANDROID ? "elements" : "queue";
+			QUEUE_OFF = UNSAFE.objectFieldOffset(pq
+					.getDeclaredField(queueFieldName));
 		} catch (Exception e) {
 			throw new Error(e);
 		}

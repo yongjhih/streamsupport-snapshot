@@ -39,7 +39,7 @@ final class ArrayDequeSpliterator<E> implements Spliterator<E> {
     private int index;  // current index, modified on traverse/split
 
     /** Creates new spliterator covering the given array and range */
-    ArrayDequeSpliterator(ArrayDeque<E> deq, int origin, int fence) {
+    private ArrayDequeSpliterator(ArrayDeque<E> deq, int origin, int fence) {
         this.deq = deq;
 //        this.elements = getData(this.deq);
         this.index = origin;
@@ -73,9 +73,7 @@ final class ArrayDequeSpliterator<E> implements Spliterator<E> {
 
     @Override
     public void forEachRemaining(Consumer<? super E> consumer) {
-        if (consumer == null) {
-            throw new NullPointerException();
-        }
+    	Objects.requireNonNull(consumer);
         Object[] a = getData(deq);
         int m = a.length - 1, f = getFence(), i = index;
         index = f;
@@ -91,9 +89,7 @@ final class ArrayDequeSpliterator<E> implements Spliterator<E> {
 
     @Override
     public boolean tryAdvance(Consumer<? super E> consumer) {
-        if (consumer == null) {
-            throw new NullPointerException();
-        }
+    	Objects.requireNonNull(consumer);
         Object[] a = getData(deq);
         int m = a.length - 1, f = getFence(), i = index;
         if (i != fence) {
