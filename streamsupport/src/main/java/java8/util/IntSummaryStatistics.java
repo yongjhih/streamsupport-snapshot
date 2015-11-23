@@ -150,14 +150,13 @@ public class IntSummaryStatistics implements IntConsumer {
         return getCount() > 0 ? (double) getSum() / getCount() : 0.0d;
     }
 
-    @Override
     /**
-     * {@inheritDoc}
-     *
      * Returns a non-empty string representation of this object suitable for
      * debugging. The exact presentation format is unspecified and may vary
      * between implementations and versions.
+     * @return a string representation of this object
      */
+    @Override
     public String toString() {
         return String.format(
             "%s{count=%d, sum=%d, min=%d, average=%f, max=%d}",

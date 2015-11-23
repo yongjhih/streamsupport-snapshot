@@ -124,8 +124,10 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    final void forEachWithCancel(Spliterator<P_OUT> spliterator, Sink<P_OUT> sink) {
-        do { } while (!sink.cancellationRequested() && spliterator.tryAdvance(sink));
+    final boolean forEachWithCancel(Spliterator<P_OUT> spliterator, Sink<P_OUT> sink) {
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spliterator.tryAdvance(sink));
+        return cancelled;
     }
 
     @Override
@@ -268,7 +270,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                         Stream<? extends R> result = null;
                         try {
                             result = mapper.apply(u);
-                            // We can do better that this too; optimize for depth=0 case and just grab spliterator and forEach it
+                            // We can do better than this too; optimize for depth=0 case and just grab spliterator and forEach it
                             if (result != null) {
                                 result.sequential().forEach(downstream);
                             }
@@ -439,6 +441,16 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         else
             return SliceOps.makeRef(this, n, -1);
     }
+
+//    @Override
+//    public final Stream<P_OUT> takeWhile(Predicate<? super P_OUT> predicate) { // JDK-8071597
+//        return WhileOps.makeTakeWhileRef(this, predicate);
+//    }
+//
+//    @Override
+//    public final Stream<P_OUT> dropWhile(Predicate<? super P_OUT> predicate) { // JDK-8071597
+//        return WhileOps.makeDropWhileRef(this, predicate);
+//    }
 
     // Terminal operations from Stream
 
@@ -646,7 +658,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                     StreamShape inputShape,
                     int opFlags) {
             super(upstream, opFlags);
-            assert upstream.getOutputShape() == inputShape;
+//            assert upstream.getOutputShape() == inputShape;
         }
 
         @Override
@@ -675,7 +687,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
                    StreamShape inputShape,
                    int opFlags) {
             super(upstream, opFlags);
-            assert upstream.getOutputShape() == inputShape;
+//            assert upstream.getOutputShape() == inputShape;
         }
 
         @Override

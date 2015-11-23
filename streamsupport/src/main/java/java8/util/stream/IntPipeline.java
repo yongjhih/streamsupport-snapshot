@@ -151,10 +151,12 @@ abstract class IntPipeline<E_IN>
     }
 
     @Override
-    final void forEachWithCancel(Spliterator<Integer> spliterator, Sink<Integer> sink) {
+    final boolean forEachWithCancel(Spliterator<Integer> spliterator, Sink<Integer> sink) {
         Spliterator.OfInt spl = adapt(spliterator);
         IntConsumer adaptedSink = adapt(sink);
-        do { } while (!sink.cancellationRequested() && spl.tryAdvance(adaptedSink));
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spl.tryAdvance(adaptedSink));
+        return cancelled;
     }
 
     @Override
@@ -388,6 +390,16 @@ abstract class IntPipeline<E_IN>
             return SliceOps.makeInt(this, n, -1);
     }
 
+//    @Override
+//    public final IntStream takeWhile(IntPredicate predicate) { // JDK-8071597
+//        return WhileOps.makeTakeWhileInt(this, predicate);
+//    }
+//
+//    @Override
+//    public final IntStream dropWhile(IntPredicate predicate) { // JDK-8071597
+//        return WhileOps.makeDropWhileInt(this, predicate);
+//    }
+
     @Override
     public final IntStream sorted() {
         return SortedOps.makeInt(this);
@@ -595,7 +607,7 @@ abstract class IntPipeline<E_IN>
                     StreamShape inputShape,
                     int opFlags) {
             super(upstream, opFlags);
-            assert upstream.getOutputShape() == inputShape;
+//            assert upstream.getOutputShape() == inputShape;
         }
 
         @Override
@@ -622,7 +634,7 @@ abstract class IntPipeline<E_IN>
                    StreamShape inputShape,
                    int opFlags) {
             super(upstream, opFlags);
-            assert upstream.getOutputShape() == inputShape;
+//            assert upstream.getOutputShape() == inputShape;
         }
 
         @Override

@@ -147,10 +147,12 @@ abstract class DoublePipeline<E_IN>
     }
 
     @Override
-    final void forEachWithCancel(Spliterator<Double> spliterator, Sink<Double> sink) {
+    final boolean forEachWithCancel(Spliterator<Double> spliterator, Sink<Double> sink) {
         Spliterator.OfDouble spl = adapt(spliterator);
         DoubleConsumer adaptedSink = adapt(sink);
-        do { } while (!sink.cancellationRequested() && spl.tryAdvance(adaptedSink));
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spl.tryAdvance(adaptedSink));
+        return cancelled;
     }
 
     @Override
@@ -352,6 +354,16 @@ abstract class DoublePipeline<E_IN>
             return SliceOps.makeDouble(this, n, limit);
         }
     }
+
+//    @Override
+//    public final DoubleStream takeWhile(DoublePredicate predicate) { // JDK-8071597
+//        return WhileOps.makeTakeWhileDouble(this, predicate);
+//    }
+//
+//    @Override
+//    public final DoubleStream dropWhile(DoublePredicate predicate) { // JDK-8071597
+//        return WhileOps.makeDropWhileDouble(this, predicate);
+//    }
 
     @Override
     public final DoubleStream sorted() {
@@ -599,7 +611,7 @@ abstract class DoublePipeline<E_IN>
                     StreamShape inputShape,
                     int opFlags) {
             super(upstream, opFlags);
-            assert upstream.getOutputShape() == inputShape;
+//            assert upstream.getOutputShape() == inputShape;
         }
 
         @Override
@@ -627,7 +639,7 @@ abstract class DoublePipeline<E_IN>
                    StreamShape inputShape,
                    int opFlags) {
             super(upstream, opFlags);
-            assert upstream.getOutputShape() == inputShape;
+//            assert upstream.getOutputShape() == inputShape;
         }
 
         @Override
